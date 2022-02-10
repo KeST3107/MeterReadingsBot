@@ -1,10 +1,10 @@
-﻿namespace MeterReadingsBot.Services
-{
-    using System;
-    using System.Net.Http;
-    using System.Threading.Tasks;
-    using MeterReadingsBot.Interfaces;
+﻿using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+using MeterReadingsBot.Interfaces;
 
+namespace MeterReadingsBot.Services
+{
     public class HttpService : IHttpService
 
     {
@@ -12,7 +12,7 @@
 
         public HttpService(IHttpClientFactory clientFactory)
         {
-            _clientFactory = clientFactory;
+            _clientFactory = clientFactory ?? throw new ArgumentNullException(nameof(clientFactory));
         }
 
         public async Task<HttpResponseMessage> PostAsync(Uri uri, StringContent content)

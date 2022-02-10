@@ -1,11 +1,11 @@
-﻿namespace MeterReadingsBot.Services
-{
-    using HtmlAgilityPack;
-    using MeterReadingsBot.Interfaces;
+﻿using HtmlAgilityPack;
+using MeterReadingsBot.Interfaces;
 
+namespace MeterReadingsBot.Services
+{
     public class HtmlParserService : IHtmlParserService
     {
-        public HtmlNodeCollection GetNodes(string html)
+        public HtmlNodeCollection GetReadingsNodes(string html)
         {
             var doc = new HtmlDocument();
             doc.LoadHtml(html);

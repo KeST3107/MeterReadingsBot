@@ -1,9 +1,9 @@
-﻿namespace MeterReadingsBot.Interfaces
-{
-    using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
+namespace MeterReadingsBot.Interfaces
+{
     public interface IEmailService
     {
-        public Task SendReadingsAsync(string address, int coldWater, int hotWater);
+        public Task SendMessageAsync(string address, int coldWater, int hotWater);
     }
 }

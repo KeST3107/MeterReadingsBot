@@ -2,12 +2,12 @@
 {
     public class EmailConfiguration
     {
-        public string BotEmail { get; set; }
-        public string Password { get; set; }
-        public string Host { get; set; }
-        public int Port { get; set; }
-        public bool UseDefaultCredentials { get; set; }
-        public bool EnableSsl { get; set; }
-        public string ToEmail { get; set; }
+        public string BotEmail { get; init; }
+        public string Password { get; init; }
+        public string Host { get; init; }
+        public int Port { get; init; }
+        public bool UseDefaultCredentials { get; init; }
+        public bool EnableSsl { get; init; }
+        public string ToEmail { get; init; }
     }
 }

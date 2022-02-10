@@ -1,16 +1,18 @@
-﻿namespace MeterReadingsBot
-{
-    using MeterReadingsBot.Interfaces;
-    using MeterReadingsBot.Models.Configuration;
-    using MeterReadingsBot.Providers;
-    using MeterReadingsBot.Services;
-    using Microsoft.AspNetCore.Builder;
-    using Microsoft.AspNetCore.Hosting;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Hosting;
-    using Telegram.Bot;
+﻿using MeterReadingsBot.Controllers;
+using MeterReadingsBot.Interfaces;
+using MeterReadingsBot.Models.Configuration;
+using MeterReadingsBot.Providers;
+using MeterReadingsBot.Services;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Telegram.Bot;
+using Telegram.Bot.Types;
 
+namespace MeterReadingsBot
+{
     public class Startup
     {
         public Startup(IConfiguration configuration)
@@ -29,6 +31,7 @@
             services.AddTransient<IRequestProvider, RequestProvider>();
             services.AddTransient<IEmailService, EmailService>();
             services.AddTransient<IHtmlParserService, HtmlParserService>();
+            services.AddTransient<IMessageHandler, MessageHandler>();
             // There are several strategies for completing asynchronous tasks during startup.
             // Some of them could be found in this article https://andrewlock.net/running-async-tasks-on-app-startup-in-asp-net-core-part-1/
             // We are going to use IHostedService to add and later remove Webhook

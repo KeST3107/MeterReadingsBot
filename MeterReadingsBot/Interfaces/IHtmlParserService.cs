@@ -1,9 +1,9 @@
-﻿namespace MeterReadingsBot.Interfaces
-{
-    using HtmlAgilityPack;
+﻿using HtmlAgilityPack;
 
+namespace MeterReadingsBot.Interfaces
+{
     public interface IHtmlParserService
     {
-        public HtmlNodeCollection GetNodes(string html);
+        public HtmlNodeCollection GetReadingsNodes(string html);
     }
 }

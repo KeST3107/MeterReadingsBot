@@ -2,7 +2,9 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using MeterReadingsBot.Interfaces;
 using Microsoft.Extensions.Logging;
+using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -12,23 +14,17 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace MeterReadingsBot.Services
 {
-    using MeterReadingsBot.Interfaces;
-    using MeterReadingsBot.Models;
-    using Telegram.Bot;
-
     public class HandleUpdateService
     {
         private readonly ITelegramBotClient _botClient;
         private readonly ILogger<HandleUpdateService> _logger;
-        private readonly IEmailService _emailService;
-        private readonly IWaterReadingsService _waterReadingsService;
+        private readonly IMessageHandler _messageHandler;
 
-        public HandleUpdateService(ITelegramBotClient botClient, ILogger<HandleUpdateService> logger, IWaterReadingsService waterReadingsService, IEmailService emailService)
+        public HandleUpdateService(ITelegramBotClient botClient, ILogger<HandleUpdateService> logger, IMessageHandler _messageHandler)
         {
-            _botClient = botClient;
-            _logger = logger;
-            _emailService = emailService;
-            _waterReadingsService = waterReadingsService;
+            _botClient = botClient ?? throw new ArgumentNullException(nameof(botClient));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this._messageHandler = _messageHandler ?? throw new ArgumentNullException(nameof(_messageHandler));
         }
 
         public async Task EchoAsync(Update update)
@@ -94,42 +90,42 @@ namespace MeterReadingsBot.Services
                     new[]
                     {
                         InlineKeyboardButton.WithCallbackData("11", "11"),
-                        InlineKeyboardButton.WithCallbackData("12", "12"),
+                        InlineKeyboardButton.WithCallbackData("12", "12")
                     },
                     // second row
                     new[]
                     {
                         InlineKeyboardButton.WithCallbackData("21", $"Delete {message.MessageId + 1}"),
-                        InlineKeyboardButton.WithCallbackData("22", "22"),
-                    },
+                        InlineKeyboardButton.WithCallbackData("22", "22")
+                    }
                 });
 
-                return await bot.SendTextMessageAsync(chatId: message.Chat.Id,
-                    text: "Choose",
+                return await bot.SendTextMessageAsync(message.Chat.Id,
+                    "Choose",
                     replyMarkup: inlineKeyboard);
             }
 
             static async Task<Message> SendReplyKeyboard(ITelegramBotClient bot, Message message)
             {
                 var replyKeyboardMarkup = new ReplyKeyboardMarkup(
-                    new KeyboardButton[][]
+                    new[]
                     {
                         new KeyboardButton[] { "11", "12" },
-                        new KeyboardButton[] { "21", "22" },
+                        new KeyboardButton[] { "21", "22" }
                     })
                 {
                     ResizeKeyboard = true
                 };
 
-                return await bot.SendTextMessageAsync(chatId: message.Chat.Id,
-                    text: "Choose",
+                return await bot.SendTextMessageAsync(message.Chat.Id,
+                    "Choose",
                     replyMarkup: replyKeyboardMarkup);
             }
 
             static async Task<Message> RemoveKeyboard(ITelegramBotClient bot, Message message)
             {
-                return await bot.SendTextMessageAsync(chatId: message.Chat.Id,
-                    text: "Removing keyboard",
+                return await bot.SendTextMessageAsync(message.Chat.Id,
+                    "Removing keyboard",
                     replyMarkup: new ReplyKeyboardRemove());
             }
 
@@ -141,9 +137,9 @@ namespace MeterReadingsBot.Services
                 using FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 var fileName = filePath.Split(Path.DirectorySeparatorChar).Last();
 
-                return await bot.SendPhotoAsync(chatId: message.Chat.Id,
-                    photo: new InputOnlineFile(fileStream, fileName),
-                    caption: "Nice Picture");
+                return await bot.SendPhotoAsync(message.Chat.Id,
+                    new InputOnlineFile(fileStream, fileName),
+                    "Nice Picture");
             }
 
             static async Task<Message> RequestContactAndLocation(ITelegramBotClient bot, Message message)
@@ -151,135 +147,71 @@ namespace MeterReadingsBot.Services
                 var RequestReplyKeyboard = new ReplyKeyboardMarkup(new[]
                 {
                     KeyboardButton.WithRequestLocation("Location"),
-                    KeyboardButton.WithRequestContact("Contact"),
+                    KeyboardButton.WithRequestContact("Contact")
                 });
 
-                return await bot.SendTextMessageAsync(chatId: message.Chat.Id,
-                    text: "Who or Where are you?",
+                return await bot.SendTextMessageAsync(message.Chat.Id,
+                    "Who or Where are you?",
                     replyMarkup: RequestReplyKeyboard);
             }
 
             async Task<Message> Usage(ITelegramBotClient bot, Message message)
             {
-                string usage = null;
-
-                var splitMessage = message.Text.Split();
-
-                if (splitMessage.Length < 3)
+                _logger.LogInformation("Начало обработки сообщения с ID: {MessageId}.",message.MessageId);
+                string usage = string.Empty;
+                try
                 {
-                    usage = "При вводе данных что-то пропустили!\n";
+                    usage = await _messageHandler.Handle(message);
                 }
-
-                if (splitMessage[0].Length < 9)
+                catch (Exception e)
                 {
-                    usage = usage + "Неправильный лицевой счет!\n";
+                    _logger.LogError(e,"Обработка сообщения с ID: {MessageId} произошла с ошибкой.",message.MessageId);
+                    return new Message();
                 }
-
-                if (splitMessage.Length > 2 && splitMessage[0].Length == 9)
-                {
-                    int.TryParse(splitMessage[0], out var personalNumber);
-                    int.TryParse(splitMessage[1], out var coldWater);
-                    int.TryParse(splitMessage[2], out var hotWater);
-                    var client = new Client
-                    {
-                        PersonalNumber = personalNumber,
-                        ColdWater = coldWater,
-                        HotWater = hotWater
-                    };
-                    var clientInfo = _waterReadingsService.GetClientInfo(client.PersonalNumber).Result;
-
-                    if (clientInfo == null) usage = usage + "Номер не найден\n";
-                    if (usage == null)
-                    {
-                        client.Address = clientInfo.Address;
-                        client.FullName = clientInfo.FullName;
-                        await _waterReadingsService.SendReadingsAsync(client.PersonalNumber, client.HotWater);
-                        await _emailService.SendReadingsAsync(client.Address, client.ColdWater, client.HotWater);
-                        return await bot.SendTextMessageAsync(chatId: message.Chat.Id,
-                            text: $"{client.FullName}\n" +
-                                  $"{client.Address}\n" +
-                                  $"Холодная вода: {coldWater}\n" +
-                                  $"Горячая вода: {hotWater}\n" +
-                                  $"Показания переданы!",
-                            replyMarkup: new ReplyKeyboardRemove());
-                    }
-                }
-
-                return await bot.SendTextMessageAsync(chatId: message.Chat.Id,
-                    text: usage,
+                _logger.LogInformation("Обработка сообщения с ID: {MessageId} прошла успешно.",message.MessageId);
+                return await bot.SendTextMessageAsync(message.Chat.Id,
+                    usage,
                     replyMarkup: new ReplyKeyboardRemove());
             }
         }
 
-        async Task<Message> SendHelpMessage(ITelegramBotClient bot, Message message)
+        private async Task<Message> SendHelpMessage(ITelegramBotClient bot, Message message)
         {
-            string helpMessage = "Чтобы пользоваться ботом нужно выбрать соотетствующий раздел:\n" +
-                                 "мод - предназначен для\n" +
-                                 "мод - предназначен для\n" +
-                                 "мод - предназначен для\n" +
-                                 "мод - предназначен для\n" +
-                                 "И передать данные в указанном формате!";
+            var helpMessage = "Чтобы пользоваться ботом нужно выбрать соотетствующий раздел:\n" +
+                              "мод - предназначен для\n" +
+                              "мод - предназначен для\n" +
+                              "мод - предназначен для\n" +
+                              "мод - предназначен для\n" +
+                              "И передать данные в указанном формате!";
 
-            return await bot.SendTextMessageAsync(chatId: message.Chat.Id,
-                text: helpMessage);
+            return await bot.SendTextMessageAsync(message.Chat.Id,
+                helpMessage);
         }
 
-        async Task<Message> WaterReadings(ITelegramBotClient bot, Message message)
+        private async Task<Message> WaterReadings(ITelegramBotClient bot, Message message)
         {
-            string helpMessage = "Чтобы передать показания введите данные в формате:\n" +
-                                 "200999999 150 200\n" +
-                                 "200999999 - Лицевой счет\n" +
-                                 "150 - Показания холодной воды\n" +
-                                 "200 - Показания горячей воды\n" +
-                                 "Показания отправляются в ОК и ТС, а также в Сев ДТВУ-4";
+            var helpMessage = "Чтобы передать показания введите данные в формате:\n" +
+                              "200999999 150 200\n" +
+                              "200999999 - Лицевой счет\n" +
+                              "150 - Показания холодной воды\n" +
+                              "200 - Показания горячей воды\n" +
+                              "Показания отправляются в ОК и ТС, а также в Сев ДТВУ-4";
 
-            return await bot.SendTextMessageAsync(chatId: message.Chat.Id,
-                text: helpMessage);
+            return await bot.SendTextMessageAsync(message.Chat.Id,
+                helpMessage);
         }
 
         // Process Inline Keyboard callback data
         private async Task BotOnCallbackQueryReceived(CallbackQuery callbackQuery)
         {
             await _botClient.AnswerCallbackQueryAsync(
-                callbackQueryId: callbackQuery.Id,
-                text: $"Received {callbackQuery.Data}");
+                callbackQuery.Id,
+                $"Received {callbackQuery.Data}");
 
             await _botClient.SendTextMessageAsync(
-                chatId: callbackQuery.Message.Chat.Id,
-                text: $"Received {callbackQuery.Data}");
+                callbackQuery.Message.Chat.Id,
+                $"Received {callbackQuery.Data}");
         }
-
-        #region Inline Mode
-
-        private async Task BotOnInlineQueryReceived(InlineQuery inlineQuery)
-        {
-            _logger.LogInformation($"Received inline query from: {inlineQuery.From.Id}");
-
-            InlineQueryResultBase[] results =
-            {
-                // displayed result
-                new InlineQueryResultArticle(
-                    id: "3",
-                    title: "TgBots",
-                    inputMessageContent: new InputTextMessageContent(
-                        "hello"
-                    )
-                )
-            };
-
-            await _botClient.AnswerInlineQueryAsync(inlineQueryId: inlineQuery.Id,
-                results: results,
-                isPersonal: true,
-                cacheTime: 0);
-        }
-
-        private Task BotOnChosenInlineResultReceived(ChosenInlineResult chosenInlineResult)
-        {
-            _logger.LogInformation($"Received inline result: {chosenInlineResult.ResultId}");
-            return Task.CompletedTask;
-        }
-
-        #endregion
 
         private Task UnknownUpdateHandlerAsync(Update update)
         {
@@ -299,5 +231,37 @@ namespace MeterReadingsBot.Services
             _logger.LogInformation(ErrorMessage);
             return Task.CompletedTask;
         }
+
+        #region Inline Mode
+
+        private async Task BotOnInlineQueryReceived(InlineQuery inlineQuery)
+        {
+            _logger.LogInformation($"Received inline query from: {inlineQuery.From.Id}");
+
+            InlineQueryResultBase[] results =
+            {
+                // displayed result
+                new InlineQueryResultArticle(
+                    "3",
+                    "TgBots",
+                    new InputTextMessageContent(
+                        "hello"
+                    )
+                )
+            };
+
+            await _botClient.AnswerInlineQueryAsync(inlineQuery.Id,
+                results,
+                isPersonal: true,
+                cacheTime: 0);
+        }
+
+        private Task BotOnChosenInlineResultReceived(ChosenInlineResult chosenInlineResult)
+        {
+            _logger.LogInformation($"Received inline result: {chosenInlineResult.ResultId}");
+            return Task.CompletedTask;
+        }
+
+        #endregion
     }
 }
