@@ -1,9 +1,19 @@
 ﻿using System.Threading.Tasks;
 
-namespace MeterReadingsBot.Interfaces
+namespace MeterReadingsBot.Interfaces;
+
+/// <summary>
+///     Определяет сервис для работы с email.
+/// </summary>
+public interface IEmailService
 {
-    public interface IEmailService
-    {
-        public Task SendMessageAsync(string address, int coldWater, int hotWater);
-    }
+    #region Overridable
+    /// <summary>
+    ///     Отправляет сообщение.
+    /// </summary>
+    /// <param name="subject">Тема сообщения.</param>
+    /// <param name="body">Тело сообщения.</param>
+    /// <returns>Задача.</returns>
+    public Task SendMessageAsync(string subject, string body);
+    #endregion
 }

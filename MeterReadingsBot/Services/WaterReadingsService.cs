@@ -1,45 +1,99 @@
 ﻿using System;
+using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
+using MeterReadingsBot.Entities;
 using MeterReadingsBot.Interfaces;
 using MeterReadingsBot.Models;
+using MeterReadingsBot.Settings;
 
-namespace MeterReadingsBot.Services
+namespace MeterReadingsBot.Services;
+
+/// <summary>
+///     Представляет сервис передачи и получения информации о показаниях воды.
+/// </summary>
+public class WaterReadingsService : IWaterReadingsService
 {
-    public class WaterReadingsService : IWaterReadingsService
+    #region Data
+    #region Consts
+    private const string MediaType = "application/x-www-form-urlencoded";
+    #endregion
+
+    #region Fields
+    private readonly IEmailService _emailService;
+    private readonly IHtmlParserService _htmlParserService;
+    private readonly IHttpClientService _httpClientService;
+    private readonly WaterReadingsServiceSettings _settings;
+    #endregion
+    #endregion
+
+    #region .ctor
+    /// <summary>
+    ///     Инициализирует новый экземпляр типа <see cref="WaterReadingsService" />
+    /// </summary>
+    /// <param name="httpClientService">Сервис клиента http.</param>
+    /// <param name="htmlParserService">Парсер html страниц.</param>
+    /// <param name="emailService">Сервис для работы с email.</param>
+    /// <param name="settings">Настройки сервиса.</param>
+    /// <exception cref="ArgumentNullException">Если один из параметров не задан.</exception>
+    public WaterReadingsService(IHttpClientService httpClientService, IHtmlParserService htmlParserService, IEmailService emailService, WaterReadingsServiceSettings settings)
     {
-        private readonly IHtmlParserService _htmlParserService;
-        private readonly IHttpService _httpService;
-        private readonly IRequestProvider _requestProvider;
-
-        public WaterReadingsService(IHttpService httpService, IRequestProvider requestProvider,
-            IHtmlParserService htmlParserService)
-        {
-            _httpService = httpService ?? throw new ArgumentNullException(nameof(httpService));
-            _requestProvider = requestProvider ?? throw new ArgumentNullException(nameof(requestProvider));
-            _htmlParserService = htmlParserService ?? throw new ArgumentNullException(nameof(htmlParserService));
-        }
-
-        public async Task<HttpResponseMessage> SendReadingsAsync(int personalNumber, int hot)
-        {
-            var request = _requestProvider.SendReadings(personalNumber, hot);
-            var response = await _httpService.PostAsync(request.Item1, request.Item2);
-            return response;
-        }
-
-        public async Task<ClientInfoDto> GetClientInfoAsync(int personalNumber)
-        {
-            var request = _requestProvider.GetInformation(personalNumber);
-            var response = await _httpService.PostAsync(request.Item1, request.Item2);
-            var stringHtml = response.Content.ReadAsStringAsync().Result;
-            if (stringHtml.Contains("Номер не найден")) throw new Exception();
-            var nodes = _htmlParserService.GetReadingsNodes(stringHtml);
-            return new ClientInfoDto
-            {
-                Address = nodes[1].ChildNodes[4].InnerText,
-                FullName = nodes[1].ChildNodes[5].InnerText,
-
-            };
-        }
+        _httpClientService = httpClientService ?? throw new ArgumentNullException(nameof(httpClientService));
+        _htmlParserService = htmlParserService ?? throw new ArgumentNullException(nameof(htmlParserService));
+        _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
     }
+    #endregion
+
+    #region IWaterReadingsService members
+    /// <inheritdoc />
+    public async Task<ClientDto> GetClientInfoAsync(int personnelNumber) // TODO ClientInfo должен также содержать номер лицевого счета.
+    {
+        var uri = new Uri(_settings.GetClientUri);
+        var content = new StringContent($"nomer={personnelNumber}", Encoding.UTF8, MediaType);
+        var response = await _httpClientService.PostAsync(uri, content);
+        var stringHtml = response.Content.ReadAsStringAsync()
+            .Result;
+        if (stringHtml.Contains("Номер не найден")) return null;
+        var nodes = _htmlParserService.GetReadingsNodes(stringHtml)[0]
+            .ChildNodes[1]
+            .InnerText.Split("\n");
+        return new ClientDto(nodes[3].TrimStart(' '), nodes[4].TrimStart(' '), nodes[2].Split(' ')[3]);
+    }
+
+    /// <inheritdoc />
+    public async Task SendWaterReadingsDTVSAsync(Client clientInfo)
+    {
+        var bodyMessage = CreateBodyMessage(clientInfo);
+        await _emailService.SendMessageAsync(clientInfo.Address, bodyMessage);
+    }
+
+    /// <inheritdoc />
+    public async Task<HttpStatusCode> SendWaterReadingsOKiTSAsync(Client clientInfo)
+    {
+        var uri = new Uri(_settings.SendReadingsUri);
+        var personnelNumber = clientInfo.PersonalNumber;
+        var hotWaterBathroom = clientInfo.HotWaterBathroom;
+        var contentMessage = clientInfo.HotWaterKitchen == null ? $"nomer={personnelNumber}&0={hotWaterBathroom}" : $"nomer={personnelNumber}&0={hotWaterBathroom}&1={clientInfo.HotWaterKitchen}";
+        var content = new StringContent(contentMessage, Encoding.UTF8, MediaType);
+        var response = await _httpClientService.PostAsync(uri, content);
+        return response.StatusCode;
+    }
+    #endregion
+
+    #region Private
+    private string CreateBodyMessage(Client clientInfo)
+    {
+        var coldWaterKitchenMessage = clientInfo.ColdWaterKitchen == null ? "" : $"Холодная вода кухня: {clientInfo.ColdWaterKitchen}\n";
+        var hotWaterKitchenMessage = clientInfo.HotWaterKitchen == null ? "" : $"Горячая вода кухня: {clientInfo.HotWaterKitchen}\n";
+        // TODO Если hotKitchen равен нулю то не добавлять его в сообщение!
+        return "Показания\n" +
+               $"Холодная вода санузел: {clientInfo.ColdWaterBathroom}\n" +
+               $"Горячая вода санузел: {clientInfo.HotWaterBathroom}\n" +
+               coldWaterKitchenMessage +
+               hotWaterKitchenMessage +
+               "Данное сообщение сформировано автоматически и не требует ответа!";
+    }
+    #endregion
 }
