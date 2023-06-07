@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeterReadingsBot", "MeterReadingsBot\MeterReadingsBot.csproj", "{C6899CB7-DB89-4393-A518-E25E2F5274F1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeterReadingsBotTest", "MeterReadingsBotTest\MeterReadingsBotTest.csproj", "{BD6D20E6-D64C-4B50-8C88-11B61DC43E0C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{C6899CB7-DB89-4393-A518-E25E2F5274F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6899CB7-DB89-4393-A518-E25E2F5274F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6899CB7-DB89-4393-A518-E25E2F5274F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD6D20E6-D64C-4B50-8C88-11B61DC43E0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD6D20E6-D64C-4B50-8C88-11B61DC43E0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD6D20E6-D64C-4B50-8C88-11B61DC43E0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD6D20E6-D64C-4B50-8C88-11B61DC43E0C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
