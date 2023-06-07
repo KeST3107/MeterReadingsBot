@@ -19,6 +19,14 @@ public abstract class UserClientBase
         Id = Guid.NewGuid();
         UpdateLastMessage();
     }
+
+    /// <summary>
+    /// Инициализирует новый экземпляр типа <see cref="UserClientBase" />
+    /// </summary>
+    protected UserClientBase()
+    {
+
+    }
     #endregion
 
     #region Properties

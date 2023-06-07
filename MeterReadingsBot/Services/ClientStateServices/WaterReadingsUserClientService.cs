@@ -163,14 +163,14 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
     {
         var isConvertible = int.TryParse(message.Text, out var personalNumber);
         if (isConvertible is false) return await _botClient.SendTextMessageAsync(message.Chat.Id, "Введено недопустимое значение.", cancellationToken: cancellationToken);
-        var clientInfo = await _waterReadingsService.GetClientInfoAsync(personalNumber);
+        var clientInfo = await _waterReadingsService.GetClientInfoAsync(personalNumber, cancellationToken);
         if (clientInfo == null) return await _botClient.SendTextMessageAsync(message.Chat.Id, "Лицевой счет не найден. Введите заново.", cancellationToken: cancellationToken);
         var chatMessage = $"По номеру: {personalNumber} найден клиент:\n" +
                           $"{clientInfo.FullName}\n" +
                           $"{clientInfo.Address}\n" +
                           "Все верно?";
         userClient.WaterReadingsState = WaterReadingsState.ConfirmClientInfo;
-        userClient.UpdateClient(clientInfo);
+        userClient.UpdateTempClient(clientInfo);
         _waterReadingsClientRepository.Update(userClient);
         return await _botClient.SendTextMessageAsync(message.Chat.Id,
             chatMessage,

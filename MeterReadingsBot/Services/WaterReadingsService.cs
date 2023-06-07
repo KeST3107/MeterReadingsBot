@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MeterReadingsBot.Entities;
 using MeterReadingsBot.Interfaces;
@@ -48,11 +49,11 @@ public class WaterReadingsService : IWaterReadingsService
 
     #region IWaterReadingsService members
     /// <inheritdoc />
-    public async Task<ClientDto> GetClientInfoAsync(int personnelNumber) // TODO ClientInfo должен также содержать номер лицевого счета.
+    public async Task<ClientDto> GetClientInfoAsync(int personnelNumber, CancellationToken cancellationToken) // TODO ClientInfo должен также содержать номер лицевого счета.
     {
         var uri = new Uri(_settings.GetClientUri);
         var content = new StringContent($"nomer={personnelNumber}", Encoding.UTF8, MediaType);
-        var response = await _httpClientService.PostAsync(uri, content);
+        var response = await _httpClientService.PostAsync(uri, content, cancellationToken);
         var stringHtml = response.Content.ReadAsStringAsync()
             .Result;
         if (stringHtml.Contains("Номер не найден")) return null;
@@ -70,14 +71,14 @@ public class WaterReadingsService : IWaterReadingsService
     }
 
     /// <inheritdoc />
-    public async Task<HttpStatusCode> SendWaterReadingsOKiTSAsync(Client clientInfo)
+    public async Task<HttpStatusCode> SendWaterReadingsOKiTSAsync(Client clientInfo, CancellationToken cancellationToken)
     {
         var uri = new Uri(_settings.SendReadingsUri);
         var personnelNumber = clientInfo.PersonalNumber;
         var hotWaterBathroom = clientInfo.HotWaterBathroom;
         var contentMessage = clientInfo.HotWaterKitchen == null ? $"nomer={personnelNumber}&0={hotWaterBathroom}" : $"nomer={personnelNumber}&0={hotWaterBathroom}&1={clientInfo.HotWaterKitchen}";
         var content = new StringContent(contentMessage, Encoding.UTF8, MediaType);
-        var response = await _httpClientService.PostAsync(uri, content);
+        var response = await _httpClientService.PostAsync(uri, content, cancellationToken);
         return response.StatusCode;
     }
     #endregion

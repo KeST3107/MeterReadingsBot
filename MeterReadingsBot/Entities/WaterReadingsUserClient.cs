@@ -20,6 +20,11 @@ public class WaterReadingsUserClient : UserClientBase
         WaterReadingsState = WaterReadingsState.Start;
         TempClient = new Client();
     }
+
+    private WaterReadingsUserClient()
+    {
+
+    }
     #endregion
 
     #region Properties
@@ -57,7 +62,7 @@ public class WaterReadingsUserClient : UserClientBase
     /// Обновляет клиента.
     /// </summary>
     /// <param name="client">Модель клиента.</param>
-    public void UpdateClient(ClientDto client)
+    public void UpdateTempClient(ClientDto client)
     {
         TempClient.Address = client.Address;
         TempClient.FullName = client.FullName;
