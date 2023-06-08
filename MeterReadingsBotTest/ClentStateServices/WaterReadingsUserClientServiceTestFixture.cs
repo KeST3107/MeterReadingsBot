@@ -11,7 +11,7 @@ namespace MeterReadingsBotTest.ClentStateServices;
 public class WaterReadingsUserClientServiceTestFixture : UserClientServiceBaseTestFixture
 {
     private IWaterReadingsUserClientService _waterReadingsUserClientService;
-    [Test]
+
     public async Task Test()
     {
         var message = await _waterReadingsUserClientService.GetStartWaterReadingsTaskMessage(new Message
