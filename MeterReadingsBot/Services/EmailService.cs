@@ -32,10 +32,10 @@ public class EmailService : IEmailService
 
     #region IEmailService members
     /// <inheritdoc />
-    public async Task SendMessageAsync(string subject, string body)
+    public async Task SendMessageAsync(string subject, string body, string recipientMail)
     {
         var fromMail = new MailAddress(_emailSettings.BotEmail, _emailSettings.DisplayName);
-        var toMail = new MailAddress(_emailSettings.ToEmail);
+        var toMail = new MailAddress(recipientMail);
         var mailMessage = new MailMessage
         {
             From = fromMail,

@@ -16,6 +16,10 @@ public class StartUserClient : UserClientBase
     {
         State = UserClientState.Start;
     }
+    private StartUserClient()
+    {
+
+    }
     #endregion
 
     #region Properties

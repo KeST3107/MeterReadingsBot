@@ -144,7 +144,8 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
                 return await GetStartWaterReadingsTaskMessage(message, cancellationToken);
             case RejectionAnswer:
                 chatMessage = "Спасибо за переданные показания\n" +
-                              "Чтобы подать показания заново: /sendreadings";
+                              "Чтобы подать показания заново: /sendreadings\n" +
+                              "Вызвать основное меню: /help ";
                 userClient.WaterReadingsState = WaterReadingsState.Start;
                 _waterReadingsClientRepository.Update(userClient);
                 SetStartUserToDefault(userClient.ChatId);
@@ -261,8 +262,8 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
             case ConfirmationAnswer:
                 try
                 {
-                    /*await _waterReadingsService.SendWaterReadingsDTVSAsync(clientInfo);
-                    await _waterReadingsService.SendWaterReadingsDTVSAsync(clientInfo);*/
+                    //await _waterReadingsService.SendWaterReadingsOKiTSAsync(userClient.TempClient);
+                    await _waterReadingsService.SendWaterReadingsToGorvodokanalAsync(userClient.TempClient);
                 }
                 catch (Exception e)
                 {
