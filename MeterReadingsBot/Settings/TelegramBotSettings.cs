@@ -13,11 +13,5 @@ public class TelegramBotSettings
     /// </summary>
     [Required]
     public string BotToken { get; init; } = null!;
-
-    /// <summary>
-    ///     Возвращает хост адрес бота.
-    /// </summary>
-    [Required]
-    public string HostAddress { get; init; } = null!;
     #endregion
 }

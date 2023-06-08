@@ -27,6 +27,10 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Запускает бекграунд сервис получения обновлений с бота.
+    /// </summary>
+    /// <param name="stoppingToken">Токен отмены.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("Starting polling service");

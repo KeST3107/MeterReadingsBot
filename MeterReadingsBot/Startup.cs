@@ -1,7 +1,5 @@
 ﻿using System;
 using MeterReadingsBot.Extensions;
-using MeterReadingsBot.Services;
-using MeterReadingsBot.Services.Telegram;
 using MeterReadingsBot.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -80,14 +78,7 @@ public class Startup
                 TelegramBotClientOptions options = new(telegramBotSettings.BotToken);
                 return new TelegramBotClient(options, httpClient);
             });
-
-
-        services.AddScoped<UpdateHandler>();
-        services.AddScoped<ReceiverService>();
-        services.AddHostedService<PollingService>();
-
-
-        //services.AddTransient<HandleUpdateService>();
+        services.AddTelegramServices();
         services.AddControllers().AddNewtonsoftJson();
     }
     #endregion

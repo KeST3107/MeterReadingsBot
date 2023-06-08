@@ -3,6 +3,7 @@ using MeterReadingsBot.Interfaces;
 using MeterReadingsBot.Repositories;
 using MeterReadingsBot.Services;
 using MeterReadingsBot.Services.ClientStateServices;
+using MeterReadingsBot.Services.Telegram;
 using MeterReadingsBot.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,17 @@ public static class ServiceDependencyInjectionExtensions
         services.AddScoped<IUserClientRepository, UserClientRepository>();
         services.AddScoped<IWaterReadingsClientRepository, UserClientRepository>();
         services.AddScoped<IStartUserClientRepository, UserClientRepository>();
+    }
+
+    /// <summary>
+    ///     Добавляет зависимости сервисов для телеграм бота.
+    /// </summary>
+    /// <param name="services">Сервисы.</param>
+    public static void AddTelegramServices(this IServiceCollection services)
+    {
+        services.AddScoped<UpdateHandler>();
+        services.AddScoped<ReceiverService>();
+        services.AddHostedService<PollingService>();
     }
     /// <summary>
     ///     Добавляет зависимости настроек сервисов.

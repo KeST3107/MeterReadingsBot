@@ -8,6 +8,10 @@ using Telegram.Bot.Types.Enums;
 
 namespace MeterReadingsBot.Abstract;
 
+/// <summary>
+/// Определяет сервис получения новых данных из бота.
+/// </summary>
+/// <typeparam name="TUpdateHandler">Обработчик входящих сообщений.</typeparam>
 public abstract class ReceiverServiceBase<TUpdateHandler> : IReceiverService
     where TUpdateHandler : IUpdateHandler
 {
@@ -26,13 +30,12 @@ public abstract class ReceiverServiceBase<TUpdateHandler> : IReceiverService
     }
 
     /// <summary>
-    /// Start to service Updates with provided Update Handler class
+    /// Отправляет новые входящие сообщения в обработчик.
     /// </summary>
-    /// <param name="stoppingToken"></param>
-    /// <returns></returns>
+    /// <param name="stoppingToken">Токен отмены.</param>
+    /// <returns>Задача.</returns>
     public async Task ReceiveAsync(CancellationToken stoppingToken)
     {
-        // ToDo: we can inject ReceiverOptions through IOptions container
         var receiverOptions = new ReceiverOptions()
         {
             AllowedUpdates = Array.Empty<UpdateType>(),

@@ -57,15 +57,21 @@ public class UpdateHandler : UserClientServiceBase, IUpdateHandler
     #endregion
 
     #region IUpdateHandler members
+    /// <summary>
+    /// Обрабатывает исключения.
+    /// </summary>
+    /// <param name="botClient">Бот.</param>
+    /// <param name="exception">Исключение.</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
     public async Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        var ErrorMessage = exception switch
+        var errorMessage = exception switch
         {
             ApiRequestException apiRequestException => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
             _ => exception.ToString()
         };
 
-        _logger.LogInformation("HandleError: {ErrorMessage}", ErrorMessage);
+        _logger.LogInformation("HandleError: {ErrorMessage}", errorMessage);
 
         // Cooldown in case of network connection error
         if (exception is RequestException)
