@@ -45,12 +45,6 @@ public class EmailSettings
     public int Port { get; init; }
 
     /// <summary>
-    ///     Возвращает почтовый адрес получателя.
-    /// </summary>
-    [Required]
-    public string ToEmail { get; init; } = null!;
-
-    /// <summary>
     ///     Возвращает флаг использования учетных данных по умолчанию.
     /// </summary>
     [Required]

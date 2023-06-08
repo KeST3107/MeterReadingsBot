@@ -144,7 +144,8 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
                 return await GetStartWaterReadingsTaskMessage(message, cancellationToken);
             case RejectionAnswer:
                 chatMessage = "Спасибо за переданные показания\n" +
-                              "Чтобы подать показания заново: /sendreadings";
+                              "Чтобы подать показания заново: /sendreadings\n" +
+                              "Вызвать основное меню: /help ";
                 userClient.WaterReadingsState = WaterReadingsState.Start;
                 _waterReadingsClientRepository.Update(userClient);
                 SetStartUserToDefault(userClient.ChatId);
@@ -162,7 +163,7 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
     private async Task<Message> GetClientInfo(WaterReadingsUserClient userClient, Message message, CancellationToken cancellationToken)
     {
         var isConvertible = int.TryParse(message.Text, out var personalNumber);
-        if (isConvertible is false) return await _botClient.SendTextMessageAsync(message.Chat.Id, "Введено недопустимое значение.", cancellationToken: cancellationToken);
+        if (isConvertible is false || message.Text.Length != 9) return await _botClient.SendTextMessageAsync(message.Chat.Id, "Введено недопустимое значение.", cancellationToken: cancellationToken);
         var clientInfo = await _waterReadingsService.GetClientInfoAsync(personalNumber);
         if (clientInfo == null) return await _botClient.SendTextMessageAsync(message.Chat.Id, "Лицевой счет не найден. Введите заново.", cancellationToken: cancellationToken);
         var chatMessage = $"По номеру: {personalNumber} найден клиент:\n" +
@@ -221,13 +222,15 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
                 userClient.TempClient.HotWaterBathroom = waterReadings;
                 userClient.WaterReadingsState = WaterReadingsState.ColdWaterKitchen;
                 chatMessage = $"Показания горячей воды в санузле в количестве: {waterReadings} сохранены\n" +
-                              "Введите показания холодной воды на кухне, если показания отсутствуют укажите '-'. ";
+                              "Введите показания холодной воды на кухне\n" +
+                              "Если показания отсутствуют укажите '-'. ";
                 break;
             case WaterReadingsState.ColdWaterKitchen:
                 userClient.TempClient.ColdWaterKitchen = waterReadings;
                 userClient.WaterReadingsState = WaterReadingsState.HotWaterKitchen;
                 chatMessage = $"Показания холодной воды на кухне в количестве: {waterReadings} сохранены\n" +
-                              "Введите показания горячей воды на кухне, если показания отсутствуют укажите '-'.";
+                              "Введите показания горячей воды на кухне\n" +
+                              "Если показания отсутствуют укажите '-'.";
                 break;
             case WaterReadingsState.HotWaterKitchen:
                 userClient.TempClient.HotWaterKitchen = waterReadings;
@@ -261,8 +264,8 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
             case ConfirmationAnswer:
                 try
                 {
-                    /*await _waterReadingsService.SendWaterReadingsDTVSAsync(clientInfo);
-                    await _waterReadingsService.SendWaterReadingsDTVSAsync(clientInfo);*/
+                    //await _waterReadingsService.SendWaterReadingsOKiTSAsync(userClient.TempClient);
+                    await _waterReadingsService.SendWaterReadingsToGorvodokanalAsync(userClient.TempClient);
                 }
                 catch (Exception e)
                 {

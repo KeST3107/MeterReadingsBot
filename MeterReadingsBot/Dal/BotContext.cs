@@ -48,6 +48,10 @@ public class BotContext : DbContext
             .HasDiscriminator<string>("DISCRIMINATOR")
             .HasValue<WaterReadingsUserClient>(nameof(WaterReadingsUserClient))
             .HasValue<StartUserClient>(nameof(StartUserClient));
+        modelBuilder.Entity<UserClientBase>()
+            .HasKey(clientBase => clientBase.Id);
+        modelBuilder.Entity<Client>()
+            .HasKey(client => client.Id);
     }
     #endregion
 }

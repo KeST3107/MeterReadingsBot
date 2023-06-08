@@ -1,7 +1,9 @@
-﻿using MeterReadingsBot.Interfaces;
+﻿using System.Diagnostics;
+using MeterReadingsBot.Interfaces;
 using MeterReadingsBot.Repositories;
 using MeterReadingsBot.Services;
 using MeterReadingsBot.Services.ClientStateServices;
+using MeterReadingsBot.Services.Telegram;
 using MeterReadingsBot.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace MeterReadingsBot.Extensions;
 
 /// <summary>
-/// Определяет расширения <see cref="IServiceCollection" /> для работы сервисов и конфигурации настроек.
+///     Определяет расширения <see cref="IServiceCollection" /> для работы сервисов и конфигурации настроек.
 /// </summary>
 public static class ServiceDependencyInjectionExtensions
 {
@@ -29,6 +31,17 @@ public static class ServiceDependencyInjectionExtensions
         services.AddScoped<IWaterReadingsClientRepository, UserClientRepository>();
         services.AddScoped<IStartUserClientRepository, UserClientRepository>();
     }
+
+    /// <summary>
+    ///     Добавляет зависимости сервисов для телеграм бота.
+    /// </summary>
+    /// <param name="services">Сервисы.</param>
+    public static void AddTelegramServices(this IServiceCollection services)
+    {
+        services.AddScoped<UpdateHandler>();
+        services.AddScoped<ReceiverService>();
+        services.AddHostedService<PollingService>();
+    }
     /// <summary>
     ///     Добавляет зависимости настроек сервисов.
     /// </summary>
@@ -38,7 +51,24 @@ public static class ServiceDependencyInjectionExtensions
     {
         services.AddSingleton(configuration.GetSection(nameof(TelegramBotSettings)).Get<TelegramBotSettings>());
         services.AddSingleton(configuration.GetSection(nameof(EmailSettings)).Get<EmailSettings>());
-        services.AddSingleton(configuration.GetSection(nameof(WaterReadingsServiceSettings)).Get<WaterReadingsServiceSettings>());
+        services.AddSingleton(GetWaterReadingsServiceSettings(configuration));
+    }
+    #endregion
+
+    #region Private
+    private static WaterReadingsServiceSettings GetWaterReadingsServiceSettings(IConfiguration configuration)
+    {
+        return Debugger.IsAttached
+            ? new WaterReadingsServiceSettings
+            {
+                DateFrom = 0,
+                DateTo = 32,
+                DTVSEmail = "kest3107@gmail.com",
+                KTLSEmail = "kest3107@gmail.com",
+                GetClientUri = "https://www.kotlas-okits.ru/consumer/pokazaniya/input.php",
+                SendReadingsUri = "https://www.kotlas-okits.ru/consumer/pokazaniya/detail.php"
+            }
+            : configuration.GetSection(nameof(WaterReadingsServiceSettings)).Get<WaterReadingsServiceSettings>();
     }
     #endregion
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace MeterReadingsBot.Entities;
 
@@ -13,11 +14,14 @@ public abstract class UserClientBase
     /// Инициализирует новый экземпляр типа <see cref="UserClientBase" />
     /// </summary>
     /// <param name="chatId">Идентификатор чата.</param>
-    protected UserClientBase(long chatId)
+    public UserClientBase(long chatId)
     {
         ChatId = chatId;
         Id = Guid.NewGuid();
         UpdateLastMessage();
+    }
+    protected UserClientBase()
+    {
     }
     #endregion
 
@@ -25,13 +29,12 @@ public abstract class UserClientBase
     /// <summary>
     /// Возвращает идентификатор чата.
     /// </summary>
-    public long ChatId { get; }
+    public long ChatId { get; private set; }
 
     /// <summary>
     /// Возвращает уникальный идентификатор.
     /// </summary>
-    [Key]
-    public Guid Id { get; }
+    public Guid Id { get; private set; }
 
     /// <summary>
     /// Возвращает время последнего сообщения.
