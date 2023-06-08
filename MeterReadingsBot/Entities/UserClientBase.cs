@@ -18,6 +18,10 @@ public abstract class UserClientBase
         Id = Guid.NewGuid();
         UpdateLastMessage();
     }
+    protected UserClientBase()
+    {
+
+    }
     #endregion
 
     #region Properties
