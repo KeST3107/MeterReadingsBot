@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using MeterReadingsBot.Interfaces;
 
@@ -31,10 +32,10 @@ public class HttpClientService : IHttpClientService
 
     #region IHttpClientService members
     /// <inheritdoc />
-    public async Task<HttpResponseMessage> PostAsync(Uri uri, StringContent content)
+    public async Task<HttpResponseMessage> PostAsync(Uri uri, StringContent content, CancellationToken cancellationToken)
     {
         var client = _clientFactory.CreateClient();
-        var response = await client.PostAsync(uri, content);
+        var response = await client.PostAsync(uri, content, cancellationToken);
         return response;
     }
     #endregion

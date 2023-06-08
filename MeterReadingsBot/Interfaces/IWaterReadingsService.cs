@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using MeterReadingsBot.Entities;
 using MeterReadingsBot.Models;
@@ -15,8 +16,9 @@ public interface IWaterReadingsService
     ///     Получает информацию о клиенте по персональному номеру.
     /// </summary>
     /// <param name="personnelNumber">Персональный номер.</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
     /// <returns>Данные клиента.</returns>
-    Task<ClientDto> GetClientInfoAsync(int personnelNumber);
+    Task<ClientDto> GetClientInfoAsync(int personnelNumber, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Отправляет показания горячей и холодной воды клиента в компанию СеВДту.
@@ -29,7 +31,8 @@ public interface IWaterReadingsService
     ///     Отправляет показания горячей воды клиента в компанию ОК и ТС.
     /// </summary>
     /// <param name="clientInfo">Информация клиента.</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
     /// <returns>Ответное сообщение.</returns>
-    Task<HttpStatusCode> SendWaterReadingsOKiTSAsync(Client clientInfo);
+    Task<HttpStatusCode> SendWaterReadingsOKiTSAsync(Client clientInfo, CancellationToken cancellationToken);
     #endregion
 }

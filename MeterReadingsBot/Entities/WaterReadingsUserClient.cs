@@ -62,7 +62,7 @@ public class WaterReadingsUserClient : UserClientBase
     /// Обновляет клиента.
     /// </summary>
     /// <param name="client">Модель клиента.</param>
-    public void UpdateClient(ClientDto client)
+    public void UpdateTempClient(ClientDto client)
     {
         TempClient.Address = client.Address;
         TempClient.FullName = client.FullName;

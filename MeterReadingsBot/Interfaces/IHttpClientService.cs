@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MeterReadingsBot.Interfaces;
@@ -15,7 +16,8 @@ public interface IHttpClientService
     /// </summary>
     /// <param name="uri">Идентификатор ресурса.</param>
     /// <param name="content">Контент ресурса.</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
     /// <returns>Ответное сообщение.</returns>
-    public Task<HttpResponseMessage> PostAsync(Uri uri, StringContent content);
+    public Task<HttpResponseMessage> PostAsync(Uri uri, StringContent content, CancellationToken cancellationToken);
     #endregion
 }
