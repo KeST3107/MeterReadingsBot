@@ -2,7 +2,6 @@
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using MeterReadingsBot.Entities;
 using MeterReadingsBot.Interfaces;
@@ -49,11 +48,11 @@ public class WaterReadingsService : IWaterReadingsService
 
     #region IWaterReadingsService members
     /// <inheritdoc />
-    public async Task<ClientDto> GetClientInfoAsync(int personnelNumber, CancellationToken cancellationToken) // TODO ClientInfo должен также содержать номер лицевого счета.
+    public async Task<ClientDto> GetClientInfoAsync(int personnelNumber)
     {
         var uri = new Uri(_settings.GetClientUri);
         var content = new StringContent($"nomer={personnelNumber}", Encoding.UTF8, MediaType);
-        var response = await _httpClientService.PostAsync(uri, content, cancellationToken);
+        var response = await _httpClientService.PostAsync(uri, content);
         var stringHtml = response.Content.ReadAsStringAsync()
             .Result;
         if (stringHtml.Contains("Номер не найден")) return null;
@@ -61,13 +60,6 @@ public class WaterReadingsService : IWaterReadingsService
             .ChildNodes[1]
             .InnerText.Split("\n");
         return new ClientDto(nodes[3].TrimStart(' '), nodes[4].TrimStart(' '), nodes[2].Split(' ')[3]);
-    }
-
-    /// <inheritdoc />
-    public async Task SendWaterReadingsDTVSAsync(Client clientInfo)
-    {
-        var bodyMessage = CreateBodyMessage(clientInfo);
-        await _emailService.SendMessageAsync(clientInfo.Address, bodyMessage);
     }
 
     /// <inheritdoc />
@@ -81,6 +73,14 @@ public class WaterReadingsService : IWaterReadingsService
         var response = await _httpClientService.PostAsync(uri, content, cancellationToken);
         return response.StatusCode;
     }
+
+    /// <inheritdoc />
+    public async Task SendWaterReadingsToGorvodokanalAsync(Client clientInfo)
+    {
+        var bodyMessage = CreateBodyMessage(clientInfo);
+        var recipientMail = GetRecipientMailByAddress(clientInfo.Address);
+        await _emailService.SendMessageAsync(clientInfo.Address, bodyMessage, recipientMail);
+    }
     #endregion
 
     #region Private
@@ -88,13 +88,17 @@ public class WaterReadingsService : IWaterReadingsService
     {
         var coldWaterKitchenMessage = clientInfo.ColdWaterKitchen == null ? "" : $"Холодная вода кухня: {clientInfo.ColdWaterKitchen}\n";
         var hotWaterKitchenMessage = clientInfo.HotWaterKitchen == null ? "" : $"Горячая вода кухня: {clientInfo.HotWaterKitchen}\n";
-        // TODO Если hotKitchen равен нулю то не добавлять его в сообщение!
         return "Показания\n" +
                $"Холодная вода санузел: {clientInfo.ColdWaterBathroom}\n" +
                $"Горячая вода санузел: {clientInfo.HotWaterBathroom}\n" +
                coldWaterKitchenMessage +
                hotWaterKitchenMessage +
                "Данное сообщение сформировано автоматически и не требует ответа!";
+    }
+
+    private string GetRecipientMailByAddress(string clientInfoAddress)
+    {
+        return clientInfoAddress.ToLower().Contains("выч") ? _settings.DTVSEmail : _settings.KTLSEmail;
     }
     #endregion
 }

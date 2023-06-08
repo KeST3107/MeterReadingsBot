@@ -31,5 +31,17 @@ public class WaterReadingsServiceSettings
     /// </summary>
     [Required]
     public string SendReadingsUri { get; init; } = null!;
+
+    /// <summary>
+    ///     Возвращает почтовый адрес гороводоканала для клиентов Вычегодского.
+    /// </summary>
+    [Required]
+    public string DTVSEmail { get; init; } = null!;
+
+    /// <summary>
+    ///     Возвращает почтовый адрес гороводоканала для клиентов Котласа.
+    /// </summary>
+    [Required]
+    public string KTLSEmail { get; init; } = null!;
     #endregion
 }

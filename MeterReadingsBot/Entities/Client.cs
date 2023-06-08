@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace MeterReadingsBot.Entities;
 
@@ -12,7 +11,6 @@ public class Client
     /// <summary>
     /// Возвращает или устанавливает идентификатор.
     /// </summary>
-    [Key]
     public Guid Id { get; set; }
     /// <summary>
     /// Возвращает или устанавливает адрес.

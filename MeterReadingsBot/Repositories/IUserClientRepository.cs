@@ -20,7 +20,7 @@ public interface IUserClientRepository
     /// </summary>
     /// <param name="chatId">Идентификатор чата.</param>
     /// <returns>Базовый клиент.</returns>
-    UserClientBase? FindBy(long chatId);
+    UserClientBase FindBy(long chatId);
 
     /// <summary>
     /// Возвращает всех базовых клиентов.
@@ -31,8 +31,8 @@ public interface IUserClientRepository
     /// <summary>
     /// Удаляет базового клиента.
     /// </summary>
-    /// <param name="chatId">Идентификатор чата.</param>
-    void Remove(long chatId);
+    /// <param name="client">Базовый клиент.</param>
+    void Remove(UserClientBase client);
 
     /// <summary>
     /// Обновляет базового клиента.

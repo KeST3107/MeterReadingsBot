@@ -7,7 +7,7 @@ public class ClientDto
 {
     #region Properties
     /// <summary>
-    /// Инициализирует новый экземпляр типа <see cref="ClientDto" />
+    /// Инициализирует новый экземпляр типа <see cref="ClientDto" />.
     /// </summary>
     /// <param name="address">Адрес.</param>
     /// <param name="fullName">Полное имя.</param>

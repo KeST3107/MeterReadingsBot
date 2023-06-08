@@ -21,7 +21,7 @@ public interface IUserClientRepository<TUserClient> where TUserClient : UserClie
     /// </summary>
     /// <param name="chatId">Идентификатор чата.</param>
     /// <returns>Возвращает клиента с типом <see cref="TUserClient"/>.</returns>
-    TUserClient? FindBy(long chatId);
+    TUserClient FindBy(long chatId);
 
     /// <summary>
     /// Обновляет клиента с типом <see cref="TUserClient"/>.

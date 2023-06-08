@@ -13,7 +13,8 @@ public interface IEmailService
     /// </summary>
     /// <param name="subject">Тема сообщения.</param>
     /// <param name="body">Тело сообщения.</param>
+    /// <param name="recipientMail">Email получателя.</param>
     /// <returns>Задача.</returns>
-    public Task SendMessageAsync(string subject, string body);
+    public Task SendMessageAsync(string subject, string body, string recipientMail);
     #endregion
 }

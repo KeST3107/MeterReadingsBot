@@ -25,7 +25,7 @@ public interface IWaterReadingsService
     /// </summary>
     /// <param name="clientInfo">Информация клиента.</param>
     /// <returns>Задача.</returns>
-    Task SendWaterReadingsDTVSAsync(Client clientInfo);
+    Task SendWaterReadingsToGorvodokanalAsync(Client clientInfo);
 
     /// <summary>
     ///     Отправляет показания горячей воды клиента в компанию ОК и ТС.

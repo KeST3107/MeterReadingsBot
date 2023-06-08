@@ -31,17 +31,17 @@ public class WaterReadingsUserClient : UserClientBase
     /// <summary>
     /// Возвращает коллекцию персональных номеров.
     /// </summary>
-    public List<string> PersonalNumbers { get; }
+    public List<string> PersonalNumbers { get; private set; }
 
     /// <summary>
     /// Возвращает временного клиента.
     /// </summary>
-    public Client TempClient { get; }
+    public Client TempClient { get; private set; }
 
     /// <summary>
     /// Возвращает состояние.
     /// </summary>
-    public WaterReadingsState WaterReadingsState { get; set; }
+    public WaterReadingsState WaterReadingsState { get;  set; }
     #endregion
 
     #region Public

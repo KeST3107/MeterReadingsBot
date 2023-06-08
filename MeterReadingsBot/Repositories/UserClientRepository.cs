@@ -54,9 +54,9 @@ public class UserClientRepository : IUserClientRepository,
     }
 
     /// <inheritdoc />
-    public void Remove(long chatId)
+    public void Remove(UserClientBase client)
     {
-        throw new NotImplementedException();
+        _context.UserClients.Remove(client);
     }
 
     /// <inheritdoc />
@@ -75,7 +75,7 @@ public class UserClientRepository : IUserClientRepository,
         _context.SaveChanges();
         return userClient;
     }
-    StartUserClient? IUserClientRepository<StartUserClient>.FindBy(long chatId)
+    StartUserClient IUserClientRepository<StartUserClient>.FindBy(long chatId)
     {
         return _context.StartUserClients.SingleOrDefault(startUserClient => startUserClient.ChatId == chatId);
     }
@@ -96,7 +96,7 @@ public class UserClientRepository : IUserClientRepository,
         _context.SaveChanges();
         return userClient;
     }
-    WaterReadingsUserClient? IUserClientRepository<WaterReadingsUserClient>.FindBy(long chatId)
+    WaterReadingsUserClient IUserClientRepository<WaterReadingsUserClient>.FindBy(long chatId)
     {
         return _context.WaterReadingsUserClients.Include(waterReadingsUserClient => waterReadingsUserClient.TempClient)
             .SingleOrDefault(waterReadingsUserClient => waterReadingsUserClient.ChatId == chatId);
