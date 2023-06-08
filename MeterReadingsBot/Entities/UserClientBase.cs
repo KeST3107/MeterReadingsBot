@@ -20,7 +20,7 @@ public abstract class UserClientBase
     }
     protected UserClientBase()
     {
-
+      
     }
     #endregion
 

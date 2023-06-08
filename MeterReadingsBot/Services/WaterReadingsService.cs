@@ -49,6 +49,7 @@ public class WaterReadingsService : IWaterReadingsService
 
     #region IWaterReadingsService members
     /// <inheritdoc />
+
     public async Task<ClientDto> GetClientInfoAsync(int personnelNumber, CancellationToken cancellationToken)
     {
         var uri = new Uri(_settings.GetClientUri);
