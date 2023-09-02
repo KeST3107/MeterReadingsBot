@@ -1,20 +1,22 @@
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS base
 WORKDIR /app
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS http://*:5000
+EXPOSE 5000
+EXPOSE 5432
 
-# copy csproj and restore as distinct layers
-COPY *.sln .
-COPY MeterReadingsBot/*.csproj ./MeterReadingsBot/
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+ARG Configuration=Release
+WORKDIR /src
+COPY *.sln ./
+COPY MeterReadingsBot/MeterReadingsBot.csproj MeterReadingsBot/
+COPY MeterReadingsBotTest/MeterReadingsBotTest.csproj MeterReadingsBotTest/
 RUN dotnet restore
+COPY . .
+WORKDIR /src/MeterReadingsBot
+RUN dotnet build -c $Configuration -o /app
 
-# copy everything else and build app
-COPY MeterReadingsBot/. ./MeterReadingsBot/
-WORKDIR /app/MeterReadingsBot
-RUN dotnet publish -c Release -o out
-
-FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS runtime
+FROM base AS final
 WORKDIR /app
-ENV ASPNETCORE_URLS http://+:8443
-COPY --from=build /app/MeterReadingsBot/out ./
-
-EXPOSE 8443/tcp
+COPY --from=build /app .
 ENTRYPOINT ["dotnet", "MeterReadingsBot.dll"]
