@@ -9,7 +9,7 @@ public class StartUserClient : UserClientBase
 {
     #region .ctor
     /// <summary>
-    /// Инициализирует новый экземпляр типа <see cref="StartUserClient" />
+    /// Инициализирует новый экземпляр типа <see cref="StartUserClient" />.
     /// </summary>
     /// <param name="chatId">Идентификатор чата.</param>
     public StartUserClient(long chatId) : base(chatId)
@@ -44,6 +44,14 @@ public class StartUserClient : UserClientBase
     public void SetStateToWaterReadingsState()
     {
         State = UserClientState.WaterReadings;
+    }
+
+    /// <summary>
+    /// Устанавливает состояние админа.
+    /// </summary>
+    public void SetStateToAdminUserState()
+    {
+        State = UserClientState.AdminUser;
     }
     #endregion
 }

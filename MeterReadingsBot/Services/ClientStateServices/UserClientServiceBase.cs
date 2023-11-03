@@ -27,18 +27,24 @@ public class UserClientServiceBase
 
     #region Fields
     private readonly IStartUserClientRepository _startUserClientRepository;
+    /// <summary>
+    /// Клиент телеграм бота.
+    /// </summary>
+    protected readonly ITelegramBotClient TelegramBotClient;
     #endregion
     #endregion
 
     #region .ctor
     /// <summary>
-    /// Инициализирует новый экземпляр типа <see cref="UserClientServiceBase" />
+    /// Инициализирует новый экземпляр типа <see cref="UserClientServiceBase" />.
     /// </summary>
     /// <param name="startUserClientRepository">Репозиторий стартовых клиентов.</param>
+    /// <param name="telegramBotClient">Клиент телеграм бота.</param>
     /// <exception cref="ArgumentNullException">Если <see cref="IStartUserClientRepository"/> не задан.</exception>
-    public UserClientServiceBase(IStartUserClientRepository startUserClientRepository)
+    public UserClientServiceBase(IStartUserClientRepository startUserClientRepository, ITelegramBotClient telegramBotClient)
     {
         _startUserClientRepository = startUserClientRepository ?? throw new ArgumentNullException(nameof(startUserClientRepository));
+        TelegramBotClient = telegramBotClient ?? throw new ArgumentNullException(nameof(telegramBotClient));
     }
     #endregion
 
@@ -83,18 +89,28 @@ public class UserClientServiceBase
     }
 
     /// <summary>
+    /// Устанавливает состояние админа стартового клиента.
+    /// </summary>
+    /// <param name="chatId">Идентификатор чата.</param>
+    protected void SetStartUserToAdminUser(long chatId)
+    {
+        var startUserClient = _startUserClientRepository.FindBy(chatId);
+        startUserClient?.SetStateToAdminUserState();
+        _startUserClientRepository.Update(startUserClient);
+    }
+
+    /// <summary>
     /// Возвращает базовое сообщение, если сообщение не соответствует.
     /// </summary>
-    /// <param name="botclient">Экземпляр <see cref="ITelegramBotClient"/>.</param>
     /// <param name="message">Сообщение клиента.</param>
     /// <param name="cancellationToken">Токен отмены.</param>
     /// <returns>Задача сообщения.</returns>
-    protected async Task<Message> Usage(ITelegramBotClient botclient, Message message, CancellationToken cancellationToken)
+    protected async Task<Message> Usage(Message message, CancellationToken cancellationToken)
     {
         const string usage = "Я тебя не понимаю 😞\n" +
                              "Попробуй эту команду /help";
 
-        return await botclient.SendTextMessageAsync(
+        return await TelegramBotClient.SendTextMessageAsync(
             message.Chat.Id,
             usage,
             replyMarkup: new ReplyKeyboardRemove(),

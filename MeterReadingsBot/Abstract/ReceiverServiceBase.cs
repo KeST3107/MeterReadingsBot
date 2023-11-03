@@ -16,16 +16,16 @@ public abstract class ReceiverServiceBase<TUpdateHandler> : IReceiverService
     where TUpdateHandler : IUpdateHandler
 {
     private readonly ITelegramBotClient _botClient;
-    private readonly IUpdateHandler _updateHandler;
+    private readonly IUpdateHandler _updateHandlerService;
     private readonly ILogger<ReceiverServiceBase<TUpdateHandler>> _logger;
 
     internal ReceiverServiceBase(
         ITelegramBotClient botClient,
-        TUpdateHandler updateHandler,
+        TUpdateHandler updateHandlerService,
         ILogger<ReceiverServiceBase<TUpdateHandler>> logger)
     {
         _botClient = botClient;
-        _updateHandler = updateHandler;
+        _updateHandlerService = updateHandlerService;
         _logger = logger;
     }
 
@@ -47,7 +47,7 @@ public abstract class ReceiverServiceBase<TUpdateHandler> : IReceiverService
 
         // Start receiving updates
         await _botClient.ReceiveAsync(
-            updateHandler: _updateHandler,
+            updateHandler: _updateHandlerService,
             receiverOptions: receiverOptions,
             cancellationToken: stoppingToken);
     }

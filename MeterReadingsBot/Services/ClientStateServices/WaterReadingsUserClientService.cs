@@ -20,7 +20,6 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
 {
     #region Data
     #region Fields
-    private readonly ITelegramBotClient _botClient;
     private readonly WaterReadingsServiceSettings _settings;
     private readonly IWaterReadingsClientRepository _waterReadingsClientRepository;
     private readonly IWaterReadingsService _waterReadingsService;
@@ -41,9 +40,8 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
         WaterReadingsServiceSettings settings,
         IWaterReadingsClientRepository waterReadingsClientRepository,
         IWaterReadingsService waterReadingsService,
-        IStartUserClientRepository startUserClientRepository) : base(startUserClientRepository)
+        IStartUserClientRepository startUserClientRepository) : base(startUserClientRepository, botClient)
     {
-        _botClient = botClient ?? throw new ArgumentNullException(nameof(botClient));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _waterReadingsClientRepository = waterReadingsClientRepository ?? throw new ArgumentNullException(nameof(waterReadingsClientRepository));
         _waterReadingsService = waterReadingsService ?? throw new ArgumentNullException(nameof(waterReadingsService));
@@ -56,7 +54,7 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
     {
         var chatMessage = message.Text.Split(' ').First();
         if (chatMessage == "/sendreadings" && (_settings.DateFrom > DateTime.Now.Day || _settings.DateTo < DateTime.Now.Day)) // TODO Засунуть в свой сервис
-            return await _botClient.SendTextMessageAsync(message.Chat.Id,
+            return await TelegramBotClient.SendTextMessageAsync(message.Chat.Id,
                 $"Показания можно передавать только с {_settings.DateFrom} по {_settings.DateTo} число.",
                 replyMarkup: new ReplyKeyboardRemove(),
                 cancellationToken: cancellationToken);
@@ -78,19 +76,19 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
             {
                 ResizeKeyboard = true
             };
-            return await _botClient.SendTextMessageAsync(chatId,
-                "Введите лицевой счет, например 299999999\n" +
+            return await TelegramBotClient.SendTextMessageAsync(chatId,
+                "Введите лицевой счет ОК и ТС, например 299999999\n" +
                 "Ваши введенные ранее лицевые счета:",
                 replyMarkup: replyKeyboardMarkup,
                 cancellationToken: cancellationToken);
         }
-        return await _botClient.SendTextMessageAsync(chatId, "Введите лицевой счет, например 299999999", cancellationToken: cancellationToken);
+        return await TelegramBotClient.SendTextMessageAsync(chatId, "Введите лицевой счет, например 299999999", cancellationToken: cancellationToken);
     }
     /// <inheritdoc />
     public Task<Message> GetWaterReadingsTaskMessage(Message message, CancellationToken cancellationToken)
     {
         var waterReadingsClient = _waterReadingsClientRepository.FindBy(message.Chat.Id);
-        if (waterReadingsClient == null) return Usage(_botClient, message, cancellationToken);
+        if (waterReadingsClient == null) return Usage(message, cancellationToken);
         return waterReadingsClient.WaterReadingsState switch
         {
             WaterReadingsState.PersonalNumber => GetClientInfo(waterReadingsClient, message, cancellationToken),
@@ -101,7 +99,7 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
             WaterReadingsState.HotWaterKitchen => SaveWaterReadings(waterReadingsClient, message, cancellationToken),
             WaterReadingsState.ConfirmWaterReadings => SendWaterReadings(waterReadingsClient, message, cancellationToken),
             WaterReadingsState.ContinueSendWaterReadings => ContinueSendWaterReadings(waterReadingsClient, message, cancellationToken),
-            _ => Usage(_botClient, message, cancellationToken)
+            _ => Usage(message, cancellationToken)
         };
     }
     #endregion
@@ -113,13 +111,11 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
         switch (message.Text.ToUpper())
         {
             case ConfirmationAnswer:
-                chatMessage = "Информация подтверждена\n" +
-                              "Введите показания холодной воды в санузле.";
+                chatMessage = "Введите показания холодной воды в санузле.";
                 userClient.WaterReadingsState = WaterReadingsState.ColdWaterBathroom;
                 break;
             case RejectionAnswer:
-                chatMessage = "Информация не подтверждена\n" +
-                              "Введите номер лицевого счета заново.";
+                chatMessage = "Введите номер лицевого счета заново.";
                 userClient.WaterReadingsState = WaterReadingsState.PersonalNumber;
                 break;
             default:
@@ -127,7 +123,7 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
                 break;
         }
         _waterReadingsClientRepository.Update(userClient);
-        return await _botClient.SendTextMessageAsync(message.Chat.Id,
+        return await TelegramBotClient.SendTextMessageAsync(message.Chat.Id,
             chatMessage,
             cancellationToken: cancellationToken,
             replyMarkup: new ReplyKeyboardRemove());
@@ -154,7 +150,7 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
                 chatMessage = $"Здесь можно ответить только {ConfirmationAnswer} или {RejectionAnswer}";
                 break;
         }
-        return await _botClient.SendTextMessageAsync(message.Chat.Id,
+        return await TelegramBotClient.SendTextMessageAsync(message.Chat.Id,
             chatMessage,
             cancellationToken: cancellationToken,
             replyMarkup: new ReplyKeyboardRemove());
@@ -163,9 +159,9 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
     private async Task<Message> GetClientInfo(WaterReadingsUserClient userClient, Message message, CancellationToken cancellationToken)
     {
         var isConvertible = int.TryParse(message.Text, out var personalNumber);
-        if (isConvertible is false || message.Text.Length != 9) return await _botClient.SendTextMessageAsync(message.Chat.Id, "Введено недопустимое значение.", cancellationToken: cancellationToken);
+        if (isConvertible is false || message.Text.Length != 9) return await TelegramBotClient.SendTextMessageAsync(message.Chat.Id, "Введено недопустимое значение.", cancellationToken: cancellationToken);
         var clientInfo = await _waterReadingsService.GetClientInfoAsync(personalNumber, cancellationToken);
-        if (clientInfo == null) return await _botClient.SendTextMessageAsync(message.Chat.Id, "Лицевой счет не найден. Введите заново.", cancellationToken: cancellationToken);
+        if (clientInfo == null) return await TelegramBotClient.SendTextMessageAsync(message.Chat.Id, "Лицевой счет не найден. Введите заново.", cancellationToken: cancellationToken);
         var chatMessage = $"По номеру: {personalNumber} найден клиент:\n" +
                           $"{clientInfo.FullName}\n" +
                           $"{clientInfo.Address}\n" +
@@ -173,7 +169,7 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
         userClient.WaterReadingsState = WaterReadingsState.ConfirmClientInfo;
         userClient.UpdateTempClient(clientInfo);
         _waterReadingsClientRepository.Update(userClient);
-        return await _botClient.SendTextMessageAsync(message.Chat.Id,
+        return await TelegramBotClient.SendTextMessageAsync(message.Chat.Id,
             chatMessage,
             replyMarkup: GetReplyKeyboard(),
             cancellationToken: cancellationToken);
@@ -189,7 +185,7 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
             userClient.WaterReadingsState = WaterReadingsState.HotWaterKitchen;
             userClient.TempClient.ColdWaterKitchen = null;
             _waterReadingsClientRepository.Update(userClient);
-            return await _botClient.SendTextMessageAsync(chatId,
+            return await TelegramBotClient.SendTextMessageAsync(chatId,
                 "Показания холодной воды на кухне в количестве: - сохранены\n" +
                 "Введите показания горячей воды на кухне, если показания отсутствуют укажите '-'. ",
                 cancellationToken: cancellationToken);
@@ -205,40 +201,40 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
                           $"Холодная вода на кухне: {clientInfo.ColdWaterKitchen}\n" +
                           $"Горячая вода на кухне: {clientInfo.HotWaterKitchen}\n" +
                           "Данные указаны верно?";
-            return await _botClient.SendTextMessageAsync(chatId, chatMessage, replyMarkup: replyKeyboardMarkup, cancellationToken: cancellationToken);
+            return await TelegramBotClient.SendTextMessageAsync(chatId, chatMessage, replyMarkup: replyKeyboardMarkup, cancellationToken: cancellationToken);
         }
         var isConvertible = int.TryParse(message.Text, out var waterReadings);
-        if (isConvertible is false) return await _botClient.SendTextMessageAsync(message.Chat.Id, "Введено недопустимое значение.", cancellationToken: cancellationToken);
+        if (isConvertible is false) return await TelegramBotClient.SendTextMessageAsync(message.Chat.Id, "Введено недопустимое значение.", cancellationToken: cancellationToken);
 
         switch (userClient.WaterReadingsState)
         {
             case WaterReadingsState.ColdWaterBathroom:
                 userClient.TempClient.ColdWaterBathroom = waterReadings;
                 userClient.WaterReadingsState = WaterReadingsState.HotWaterBathroom;
-                chatMessage = $"Показания холодной воды в санузле в количестве: {waterReadings} сохранены\n" +
+                chatMessage = $"Холодная вода в санузле: {waterReadings} сохранена\n" +
                               "Введите показания горячей воды в санузле. ";
                 break;
             case WaterReadingsState.HotWaterBathroom:
                 userClient.TempClient.HotWaterBathroom = waterReadings;
                 userClient.WaterReadingsState = WaterReadingsState.ColdWaterKitchen;
-                chatMessage = $"Показания горячей воды в санузле в количестве: {waterReadings} сохранены\n" +
+                chatMessage = $"Горячая вода в санузле в количестве: {waterReadings} сохранена\n" +
                               "Введите показания холодной воды на кухне\n" +
                               "Если показания отсутствуют укажите '-'. ";
                 break;
             case WaterReadingsState.ColdWaterKitchen:
                 userClient.TempClient.ColdWaterKitchen = waterReadings;
                 userClient.WaterReadingsState = WaterReadingsState.HotWaterKitchen;
-                chatMessage = $"Показания холодной воды на кухне в количестве: {waterReadings} сохранены\n" +
+                chatMessage = $"Холодная вода на кухне в количестве: {waterReadings} сохранена\n" +
                               "Введите показания горячей воды на кухне\n" +
                               "Если показания отсутствуют укажите '-'.";
                 break;
             case WaterReadingsState.HotWaterKitchen:
                 userClient.TempClient.HotWaterKitchen = waterReadings;
                 userClient.WaterReadingsState = WaterReadingsState.ConfirmWaterReadings;
-                chatMessage = $"Показания горячей воды на кухне в количестве: {waterReadings} сохранены.";
+                chatMessage = $"Горячая вода на кухне в количестве: {waterReadings} сохранена.";
                 break;
             default:
-                return await _botClient.SendTextMessageAsync(chatId, "Введено недопустимое значение.", cancellationToken: cancellationToken);
+                return await TelegramBotClient.SendTextMessageAsync(chatId, "Введено недопустимое значение.", cancellationToken: cancellationToken);
         }
         if (userClient.WaterReadingsState == WaterReadingsState.ConfirmWaterReadings)
         {
@@ -250,10 +246,10 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
                           $"Горячая вода на кухне: {clientInfo.HotWaterKitchen}\n" +
                           "Данные указаны верно?";
             _waterReadingsClientRepository.Update(userClient);
-            return await _botClient.SendTextMessageAsync(chatId, chatMessage, replyMarkup: replyKeyboardMarkup, cancellationToken: cancellationToken);
+            return await TelegramBotClient.SendTextMessageAsync(chatId, chatMessage, replyMarkup: replyKeyboardMarkup, cancellationToken: cancellationToken);
         }
         _waterReadingsClientRepository.Update(userClient);
-        return await _botClient.SendTextMessageAsync(chatId, chatMessage, cancellationToken: cancellationToken);
+        return await TelegramBotClient.SendTextMessageAsync(chatId, chatMessage, cancellationToken: cancellationToken);
     }
 
     private async Task<Message> SendWaterReadings(WaterReadingsUserClient userClient, Message message, CancellationToken cancellationToken)
@@ -264,7 +260,7 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
             case ConfirmationAnswer:
                 try
                 {
-                    //await _waterReadingsService.SendWaterReadingsOKiTSAsync(userClient.TempClient);
+                    await _waterReadingsService.SendWaterReadingsOKiTSAsync(userClient.TempClient, cancellationToken);
                     await _waterReadingsService.SendWaterReadingsToGorvodokanalAsync(userClient.TempClient);
                 }
                 catch (Exception e)
@@ -284,12 +280,12 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
                               "Введите показания холодной воды в санузле.";
                 userClient.WaterReadingsState = WaterReadingsState.ColdWaterBathroom;
                 _waterReadingsClientRepository.Update(userClient);
-                return await _botClient.SendTextMessageAsync(message.Chat.Id, chatMessage, cancellationToken: cancellationToken, replyMarkup: new ReplyKeyboardRemove());
+                return await TelegramBotClient.SendTextMessageAsync(message.Chat.Id, chatMessage, cancellationToken: cancellationToken, replyMarkup: new ReplyKeyboardRemove());
             default:
                 chatMessage = $"Здесь можно ответить только {ConfirmationAnswer} или {RejectionAnswer}";
                 break;
         }
-        return await _botClient.SendTextMessageAsync(message.Chat.Id, chatMessage, cancellationToken: cancellationToken, replyMarkup: GetReplyKeyboard());
+        return await TelegramBotClient.SendTextMessageAsync(message.Chat.Id, chatMessage, cancellationToken: cancellationToken, replyMarkup: GetReplyKeyboard());
     }
     #endregion
 }
