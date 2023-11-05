@@ -20,7 +20,7 @@ public class WaterReadingsStartPromotionJob : JobBase
     /// </summary>
     /// <param name="loggerFactory">Фабрика логгеров.</param>
     /// <param name="promotionService">Сервис массовой рассылки.</param>
-    /// <param name="promotionMessageSettings">Настройки сообщений.</param>
+    /// <param name="promotionMessageSettings">Настройки сообщений рассылки.</param>
     public WaterReadingsStartPromotionJob(ILoggerFactory loggerFactory, IPromotionService promotionService, PromotionMessageSettings promotionMessageSettings) : base(loggerFactory)
     {
         _promotionService = promotionService ?? throw new ArgumentNullException(nameof(promotionService));

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MeterReadingsBot.Interfaces;
+using MeterReadingsBot.Properties;
 using MeterReadingsBot.Repositories;
 using MeterReadingsBot.Settings;
 using Microsoft.Extensions.Logging;
@@ -50,7 +51,7 @@ public class PromotionService : IPromotionService
         var countUsers = userIds.Count;
         var task = new Task(() =>
         {
-            _logger.LogInformation("Запущена рассылка:{PromotionName} клиентам в количестве: {CountUsers}.", promotionName, countUsers);
+            _logger.LogInformation(Resources.StrFmtInfoPromotionStarted, promotionName, countUsers);
             foreach (var id in userIds)
             {
                 try
@@ -60,13 +61,13 @@ public class PromotionService : IPromotionService
                 catch (Exception e)
                 {
                     countUsers--;
-                    _logger.LogError(e, "Рассылка пользователю {UserChatId} закончилась с ошибкой.", id);
+                    _logger.LogError(e, Resources.StrFmtErrorPromotionToUserFailed, id);
                     throw;
                 }
                 Thread.Sleep(50);
             }
-            _logger.LogInformation("Рассылка: {PromotionName} удачно дошла до {CountUsers} клиентов.",promotionName, countUsers);
-            _botClient.SendTextMessageAsync(_settings.AdminChatId, $"Рассылка:{promotionName} удачно дошла до {countUsers} клиентов.", cancellationToken: cancellationToken);
+            _logger.LogInformation(Resources.StrFmtInfoPromotionEndedSuccessful,promotionName, countUsers);
+            _botClient.SendTextMessageAsync(_settings.AdminChatId, string.Format(Resources.StrFmtInfoPromotionEndedSuccessful, promotionName, countUsers), cancellationToken: cancellationToken);
         });
         task.Start();
     }

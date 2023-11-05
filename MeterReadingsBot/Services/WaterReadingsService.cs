@@ -19,6 +19,7 @@ public class WaterReadingsService : IWaterReadingsService
     #region Data
     #region Consts
     private const string MediaType = "application/x-www-form-urlencoded";
+    private const string NumberNotFined = "Номер не найден";
     #endregion
 
     #region Fields
@@ -56,7 +57,7 @@ public class WaterReadingsService : IWaterReadingsService
         var response = await _httpClientService.PostAsync(uri, content, cancellationToken);
         var stringHtml = response.Content.ReadAsStringAsync()
             .Result;
-        if (stringHtml.Contains("Номер не найден")) return null;
+        if (stringHtml.Contains(NumberNotFined)) return null;
         var nodes = _htmlParserService.GetReadingsNodes(stringHtml)[0]
             .ChildNodes[1]
             .InnerText.Split("\n");

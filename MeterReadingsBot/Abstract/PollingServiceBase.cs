@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using MeterReadingsBot.Properties;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -33,7 +34,7 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
     /// <param name="stoppingToken">Токен отмены.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Starting polling service");
+        _logger.LogInformation(Resources.StrFmtInfoPollingServiceStarted);
 
         await DoWork(stoppingToken);
     }
@@ -59,7 +60,7 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
             // see: https://github.com/TelegramBots/Telegram.Bot/issues/1106
             catch (Exception ex)
             {
-                _logger.LogError("Polling failed with exception: {Exception}", ex);
+                _logger.LogError(Resources.StrFmtErrorPollingServiceFailed, ex);
 
                 // Cooldown if something goes wrong
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
