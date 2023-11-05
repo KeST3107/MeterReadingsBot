@@ -11,7 +11,7 @@ namespace MeterReadingsBot.Services.ClientStateServices;
 /// <summary>
 /// Определяет базовую логику взаимодействия с клиентами.
 /// </summary>
-public class UserClientServiceBase
+public abstract class UserClientServiceBase
 {
     #region Data
     #region Consts

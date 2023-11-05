@@ -66,8 +66,8 @@ public static class ServiceDependencyInjectionExtensions
         return Debugger.IsAttached
             ? new CronJobSettings
             {
-                WaterReadingsStartPromotionJobTrigger = "10 0/1 * * * ?",
-                WaterReadingsEndPromotionJobTrigger = "30 0/1 * * * ?"
+                WaterReadingsStartPromotionJobTrigger = "10 0/1 * * * ?", // Каждая десятая секунда минуты.
+                WaterReadingsEndPromotionJobTrigger = "30 0/1 * * * ?" // Каждая тридцатая секунда минуты.
             }
             : configuration.GetSection(nameof(CronJobSettings)).Get<CronJobSettings>();
     }

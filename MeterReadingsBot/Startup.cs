@@ -74,7 +74,7 @@ public class Startup
             .GetRequiredService<TelegramBotSettings>();
 
 
-        services.AddHttpClient("telegram_bot_client")
+        services.AddHttpClient(nameof(TelegramBotClient))
             .AddTypedClient<ITelegramBotClient>(httpClient =>
             {
                 TelegramBotClientOptions options = new(telegramBotSettings.BotToken);

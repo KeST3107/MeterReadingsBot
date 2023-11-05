@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
+using MeterReadingsBot.Properties;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace MeterReadingsBot.Cron;
 
 /// <summary>
-/// Определяет базовыйй класс джобы.
+/// Определяет базовый класс джобы.
 /// </summary>
 public abstract class JobBase : IJob
 {
@@ -41,18 +42,17 @@ public abstract class JobBase : IJob
     /// <exception cref="JobExecutionException">Возникает если джоба выполнилась с ошибкой.</exception>
     public async Task Execute(IJobExecutionContext context)
     {
-        var taskType = GetType();
-        _logger.LogInformation("Запуск таски под названием: {TaskType}.", taskType);
+        var jobName = GetType().Name;
         try
         {
-            _logger.LogInformation("Обработка таски: {NameTask} запустилась.", context.JobDetail.Key.Name);
+            _logger.LogInformation(Resources.StrFmtInfoJobProcessStarted, jobName);
             await InnerExecute(context);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,"Таска завершилась: {NameTask} с ошибкой.", context.JobDetail.Key.Name);
+            _logger.LogError(ex,Resources.StrFmtErrorJobEndedWithError, jobName);
             throw new JobExecutionException(ex);
         }
-        _logger.LogInformation("Обработка таски: {NameTask} завершилась.", context.JobDetail.Key.Name);
+        _logger.LogInformation(Resources.StrFmtInfoJobEndedSuccessful, jobName);
     }
 }
