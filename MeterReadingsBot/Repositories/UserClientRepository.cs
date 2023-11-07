@@ -68,7 +68,7 @@ public class UserClientRepository : IUserClientRepository,
     }
 
     /// <inheritdoc />
-    public IReadOnlyCollection<UserClientBase> GetAllById(long chatId)
+    public IReadOnlyCollection<UserClientBase> GetAllBy(long chatId)
     {
        return _context.UserClients.Where(client => client.ChatId == chatId).ToList();
     }

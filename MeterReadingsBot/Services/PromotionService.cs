@@ -51,7 +51,7 @@ public class PromotionService : IPromotionService
         var countUsers = userIds.Count;
         var task = new Task(() =>
         {
-            _logger.LogInformation(Resources.StrFmtInfoPromotionStarted, promotionName, countUsers);
+            _logger.LogInformation(Resources.StrFmtInfoPromotionStarted, promotionName, countUsers.ToString());
             foreach (var id in userIds)
             {
                 try
@@ -66,8 +66,8 @@ public class PromotionService : IPromotionService
                 }
                 Thread.Sleep(50);
             }
-            _logger.LogInformation(Resources.StrFmtInfoPromotionEndedSuccessful,promotionName, countUsers);
-            _botClient.SendTextMessageAsync(_settings.AdminChatId, string.Format(Resources.StrFmtInfoPromotionEndedSuccessful, promotionName, countUsers), cancellationToken: cancellationToken);
+            _logger.LogInformation(Resources.StrFmtInfoPromotionEndedSuccessful,promotionName, countUsers.ToString());
+            _botClient.SendTextMessageAsync(_settings.AdminChatId, $"Рассылка: {promotionName} удачно дошла до {countUsers.ToString()} клиентов.", cancellationToken: cancellationToken);
         });
         task.Start();
     }

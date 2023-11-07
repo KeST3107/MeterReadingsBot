@@ -26,8 +26,8 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
     private readonly IUserClientRepository _userClientRepository;
 
     private readonly IStartUserClientRepository _startUserClientRepository;
-    private readonly IWaterReadingsUserClientService _waterReadingsUserClientService;
-    private readonly IAdminUserClientService _adminUserClientService;
+    private readonly WaterReadingsUserClientService _waterReadingsUserClientService;
+    private readonly AdminUserClientService _adminUserClientService;
     #endregion
     #endregion
 
@@ -46,8 +46,8 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
         ILogger<UpdateHandlerService> logger,
         IUserClientRepository userClientRepository,
         IStartUserClientRepository startUserClientRepository,
-        IWaterReadingsUserClientService waterReadingsUserClientService,
-        IAdminUserClientService adminUserClientService) : base(startUserClientRepository, botClient)
+        WaterReadingsUserClientService waterReadingsUserClientService,
+        AdminUserClientService adminUserClientService) : base(startUserClientRepository, botClient)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _userClientRepository = userClientRepository ?? throw new ArgumentNullException(nameof(userClientRepository));
@@ -118,7 +118,7 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
         var chatId = myChatMember.Chat.Id;
         if (myChatMember.NewChatMember.Status == ChatMemberStatus.Kicked)
         {
-            var clients = _userClientRepository.GetAllById(chatId);
+            var clients = _userClientRepository.GetAllBy(chatId);
             foreach (var client in clients)
             {
                 _userClientRepository.Remove(client);
@@ -126,7 +126,7 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
         }
         if (myChatMember.NewChatMember.Status == ChatMemberStatus.Member)
         {
-            InitializeStartUsers(chatId);
+            InitializeUsers(chatId);
         }
         return Task.CompletedTask;
     }
@@ -141,16 +141,20 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
        var chatMessage = message.Text.Split(' ').First();
        if (chatMessage == "/start")
        {
-           InitializeStartUsers(chatId);
+           InitializeUsers(chatId);
            return;
+       }
+       if (chatMessage == MainMenuAnswer)
+       {
+           ResetStartUser(chatId);
        }
        var startState = GetStartUserState(chatId);
        _logger.LogInformation($"Receive message type: {message.Type}");
         var action = startState switch
         {
             UserClientState.Start => GetDefaultTaskMessage(message, cancellationToken),
-            UserClientState.WaterReadings => _waterReadingsUserClientService.GetWaterReadingsTaskMessage(message, cancellationToken),
-            UserClientState.AdminUser => _adminUserClientService.GetAdminUserTaskMessage(message, cancellationToken),
+            UserClientState.WaterReadings => _waterReadingsUserClientService.GetUserTaskMessage(message, cancellationToken),
+            UserClientState.AdminUser => _adminUserClientService.GetUserTaskMessage(message, cancellationToken),
             _ => throw new ArgumentOutOfRangeException()
         };
 
@@ -159,13 +163,20 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
 
     }
 
-    private void InitializeStartUsers(long chatId)
+    private void InitializeUsers(long chatId)
     {
-        if (_userClientRepository.GetAllById(chatId).Count == 0)
+        if (_userClientRepository.GetAllBy(chatId).Count == 0)
         {
-            _userClientRepository.Add(new StartUserClient(chatId));
+            _userClientRepository.Add(new StartUserClient(chatId)); // TODO фабрика создания всех видов клиентов и последующее добавление в репозитории.
             _userClientRepository.Add(new WaterReadingsUserClient(chatId));
         }
+    }
+
+    private void ResetStartUser(long chatId)
+    {
+        var startUser = _startUserClientRepository.FindBy(chatId);
+        startUser.SetStateToStartState();
+        _startUserClientRepository.Update(startUser);
     }
 
     private Task<Message> GetDefaultTaskMessage(Message message, CancellationToken cancellationToken)
@@ -181,9 +192,11 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
             "/photo"    => SendFile(_botClient, message),
             "/request"  => RequestContactAndLocation(_botClient, message),
             _ => Usage(_botClient, message, cancellationToken)*/
-            "/admin" => _adminUserClientService.GetStartAdminUserTaskMessageAsync(message, cancellationToken),
-            "/sendreadings" => _waterReadingsUserClientService.GetStartWaterReadingsTaskMessage(message, cancellationToken),
+            "/admin" => _adminUserClientService.GetStartUserTaskMessageAsync(message, cancellationToken),
+            "/sendreadings" => _waterReadingsUserClientService.GetStartUserTaskMessageAsync(message, cancellationToken),
             "/help" => HelpMessage(message, cancellationToken),
+            "/menu" => MenuMessage(message, cancellationToken),
+            "/cancel" => MenuMessage(message, cancellationToken),
             _ => Usage(message, cancellationToken)
         };
     }
@@ -193,7 +206,7 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
         var client = _startUserClientRepository.FindBy(chatId);
         if (client == null)
         {
-            InitializeStartUsers(chatId);
+            InitializeUsers(chatId);
         }
         return client == null ? UserClientState.Start : client.State;
     }
@@ -217,7 +230,19 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
         const string usage = "Команды бота:\n" +
                              "/help - отправляет сообщение с командами\n" +
                              "/sendreadings - запускает команду подачу показаний\n" +
+                             "/admin - админские штучки :)\n" +
                              "Ошибки и пожелания - @KeST3107";
+
+        return await TelegramBotClient.SendTextMessageAsync(
+            message.Chat.Id,
+            usage,
+            replyMarkup: new ReplyKeyboardRemove(),
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task<Message> MenuMessage(Message message, CancellationToken cancellationToken)
+    {
+        const string usage = "Отправляй команду /sendreadings :)\n";
 
         return await TelegramBotClient.SendTextMessageAsync(
             message.Chat.Id,

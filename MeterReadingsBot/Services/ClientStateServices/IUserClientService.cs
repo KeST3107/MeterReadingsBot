@@ -5,25 +5,23 @@ using Telegram.Bot.Types;
 namespace MeterReadingsBot.Services.ClientStateServices;
 
 /// <summary>
-/// Представляет сервис клиентов передачи показаний.
+/// Представляет сервис работы с клиентами.
 /// </summary>
-public interface IWaterReadingsUserClientService
+public interface IUserClientService
 {
-    #region Overridable
     /// <summary>
-    /// Возвращает стартовое сообщение передачи показаний для клиента.
+    /// Возвращает стартовое сообщение.
     /// </summary>
     /// <param name="message">Сообщение клиента.</param>
     /// <param name="cancellationToken">Токен отмены.</param>
     /// <returns>Задача сообщения.</returns>
-    Task<Message> GetStartWaterReadingsTaskMessage(Message message, CancellationToken cancellationToken);
+    Task<Message> GetStartUserTaskMessageAsync(Message message, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Возвращает сообщение сценария передачи показаний для клиента.
+    /// Возвращает сообщение сценария взаимодействия.
     /// </summary>
     /// <param name="message">Сообщение клиента.</param>
     /// <param name="cancellationToken">Токен отмены.</param>
     /// <returns>Задача сообщения.</returns>
-    Task<Message> GetWaterReadingsTaskMessage(Message message, CancellationToken cancellationToken);
-    #endregion
+    Task<Message> GetUserTaskMessage(Message message, CancellationToken cancellationToken);
 }

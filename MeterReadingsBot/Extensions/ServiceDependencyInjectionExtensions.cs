@@ -27,9 +27,9 @@ public static class ServiceDependencyInjectionExtensions
         services.AddTransient<IWaterReadingsService, WaterReadingsService>();
         services.AddTransient<IEmailService, EmailService>();
         services.AddTransient<IHtmlParserService, HtmlParserService>();
-        services.AddTransient<IWaterReadingsUserClientService, WaterReadingsUserClientService>();
-        services.AddTransient<IAdminUserClientService, AdminUserClientService>();
         services.AddTransient<IPromotionService, PromotionService>();
+        services.AddTransient<WaterReadingsUserClientService>();
+        services.AddTransient<AdminUserClientService>();
         services.AddScoped<IUserClientRepository, UserClientRepository>();
         services.AddScoped<IWaterReadingsClientRepository, UserClientRepository>();
         services.AddScoped<IStartUserClientRepository, UserClientRepository>();

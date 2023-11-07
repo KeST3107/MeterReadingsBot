@@ -1,6 +1,7 @@
 ﻿using System;
 using MeterReadingsBot.Dal;
 using MeterReadingsBot.Extensions;
+using MeterReadingsBot.Repositories;
 using MeterReadingsBot.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
