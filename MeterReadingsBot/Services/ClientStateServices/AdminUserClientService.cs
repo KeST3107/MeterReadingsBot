@@ -16,7 +16,7 @@ namespace MeterReadingsBot.Services.ClientStateServices;
 /// <summary>
 ///     Представляет сервис взаимодействия суперадминов.
 /// </summary>
-public class AdminUserClientService : UserClientServiceBase, IAdminUserClientService
+public class AdminUserClientService : UserClientServiceBase, IUserClientService
 {
     #region Data
     #region Fields
@@ -51,19 +51,31 @@ public class AdminUserClientService : UserClientServiceBase, IAdminUserClientSer
 
     #region IAdminUserClientService members
     /// <inheritdoc />
-    public Task<Message> GetAdminUserTaskMessage(Message message, CancellationToken cancellationToken)
+    public Task<Message> GetUserTaskMessage(Message message, CancellationToken cancellationToken)
     {
+        var chatMessage = message.Text.Split(' ').First();
+        if (chatMessage == ReturnAnswer)
+        {
+            ResetUser(message.Chat.Id);
+        }
         var adminUserClient = _adminUserRepository.FindBy(message.Chat.Id);
         if (adminUserClient == null) return Usage(message, cancellationToken);
         return adminUserClient.AdminUserState switch
         {
-            AdminUserState.Start => GetStartAdminUserTaskMessageAsync(message, cancellationToken),
+            AdminUserState.Start => GetStartUserTaskMessageAsync(message, cancellationToken),
             AdminUserState.Commands => GetCommandsMessage(adminUserClient, message, cancellationToken),
             AdminUserState.AddAdmin => GetAddAdminMessageAsync(adminUserClient, message, cancellationToken),
             AdminUserState.RemoveAdmin => GetRemoveAdminMessageAsync(adminUserClient, message, cancellationToken),
             AdminUserState.Promotion => GetPromotionMessageAsync(adminUserClient, message, cancellationToken),
             _ => Usage(message, cancellationToken)
         };
+    }
+
+    private void ResetUser(long chatId)
+    {
+        var adminUser = _adminUserRepository.FindBy(chatId);
+        adminUser.AdminUserState = AdminUserState.Start;
+        _adminUserRepository.Update(adminUser);
     }
 
     private async Task<Message> GetPromotionMessageAsync(AdminUserClient adminUserClient, Message message, CancellationToken cancellationToken)
@@ -76,7 +88,7 @@ public class AdminUserClientService : UserClientServiceBase, IAdminUserClientSer
     }
 
     /// <inheritdoc />
-    public async Task<Message> GetStartAdminUserTaskMessageAsync(Message message, CancellationToken cancellationToken)
+    public async Task<Message> GetStartUserTaskMessageAsync(Message message, CancellationToken cancellationToken)
     {
         var chatId = message.Chat.Id;
         var userName = message.Chat.Username ?? chatId.ToString();
@@ -112,10 +124,12 @@ public class AdminUserClientService : UserClientServiceBase, IAdminUserClientSer
         var adminUser = _adminUserRepository.FindBy(adminId);
         if (adminUser != null)
         {
-            return await TelegramBotClient.SendTextMessageAsync(chatId, "Пользователь уже существует.", cancellationToken: cancellationToken);
+            return await TelegramBotClient.SendTextMessageAsync(chatId, "Пользователь уже существует.\n" +
+                                                                        "Введите заново.", cancellationToken: cancellationToken);
         }
         _adminUserRepository.Add(new AdminUserClient(adminId, null));
         adminUserClient.AdminUserState = AdminUserState.Commands;
+        _adminUserRepository.Update(adminUserClient);
         return await TelegramBotClient.SendTextMessageAsync(chatId, $"Администратор с id: {adminId} добавлен!", cancellationToken: cancellationToken);
     }
 

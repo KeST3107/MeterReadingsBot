@@ -16,7 +16,7 @@ namespace MeterReadingsBot.Services.ClientStateServices;
 /// <summary>
 /// Определяет сервис клиентов передачи показаний.
 /// </summary>
-public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadingsUserClientService
+public class WaterReadingsUserClientService : UserClientServiceBase, IUserClientService
 {
     #region Data
     #region Fields
@@ -50,7 +50,7 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
 
     #region IWaterReadingsUserClientService members
     /// <inheritdoc />
-    public async Task<Message> GetStartWaterReadingsTaskMessage(Message message, CancellationToken cancellationToken)
+    public async Task<Message> GetStartUserTaskMessageAsync(Message message, CancellationToken cancellationToken)
     {
         var chatMessage = message.Text.Split(' ').First();
         if (chatMessage == "/sendreadings" && (_settings.DateFrom > DateTime.Now.Day || _settings.DateTo < DateTime.Now.Day)) // TODO Засунуть в свой сервис
@@ -85,12 +85,18 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
         return await TelegramBotClient.SendTextMessageAsync(chatId, "Введите лицевой счет, например 299999999", cancellationToken: cancellationToken);
     }
     /// <inheritdoc />
-    public Task<Message> GetWaterReadingsTaskMessage(Message message, CancellationToken cancellationToken)
+    public Task<Message> GetUserTaskMessage(Message message, CancellationToken cancellationToken)
     {
+        var chatMessage = message.Text.Split(' ').First();
+        if (chatMessage == ReturnAnswer || chatMessage == MainMenuAnswer)
+        {
+            ResetUser(message.Chat.Id);
+        }
         var waterReadingsClient = _waterReadingsClientRepository.FindBy(message.Chat.Id);
         if (waterReadingsClient == null) return Usage(message, cancellationToken);
         return waterReadingsClient.WaterReadingsState switch
         {
+            WaterReadingsState.Start => GetStartUserTaskMessageAsync(message, cancellationToken),
             WaterReadingsState.PersonalNumber => GetClientInfo(waterReadingsClient, message, cancellationToken),
             WaterReadingsState.ConfirmClientInfo => ConfirmClientInfo(waterReadingsClient, message, cancellationToken),
             WaterReadingsState.ColdWaterBathroom => SaveWaterReadings(waterReadingsClient, message, cancellationToken),
@@ -101,6 +107,13 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
             WaterReadingsState.ContinueSendWaterReadings => ContinueSendWaterReadings(waterReadingsClient, message, cancellationToken),
             _ => Usage(message, cancellationToken)
         };
+    }
+
+    private void ResetUser(long chatId)
+    {
+        var waterClient = _waterReadingsClientRepository.FindBy(chatId);
+        waterClient.WaterReadingsState = WaterReadingsState.Start;
+        _waterReadingsClientRepository.Update(waterClient);
     }
     #endregion
 
@@ -137,7 +150,7 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IWaterReadi
             case ConfirmationAnswer:
                 userClient.WaterReadingsState = WaterReadingsState.Start;
                 _waterReadingsClientRepository.Update(userClient);
-                return await GetStartWaterReadingsTaskMessage(message, cancellationToken);
+                return await GetStartUserTaskMessageAsync(message, cancellationToken);
             case RejectionAnswer:
                 chatMessage = "Спасибо за переданные показания\n" +
                               "Чтобы подать показания заново: /sendreadings\n" +

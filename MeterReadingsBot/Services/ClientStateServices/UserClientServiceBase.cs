@@ -23,6 +23,14 @@ public abstract class UserClientServiceBase
     /// Отклоняющий ответ.
     /// </summary>
     protected const string RejectionAnswer = "НЕТ";
+    /// <summary>
+    /// Отклоняющий ответ.
+    /// </summary>
+    protected const string ReturnAnswer = "/cancel";
+    /// <summary>
+    /// Отклоняющий ответ.
+    /// </summary>
+    protected const string MainMenuAnswer = "/menu";
     #endregion
 
     #region Fields

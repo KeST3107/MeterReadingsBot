@@ -32,7 +32,7 @@ public interface IUserClientRepository
     /// Возвращает всех клиентов по идентфикатору чата.
     /// </summary>
     /// <returns>Коллекция базовых клиентов.</returns>
-    IReadOnlyCollection<UserClientBase> GetAllById(long chatId);
+    IReadOnlyCollection<UserClientBase> GetAllBy(long chatId);
 
     /// <summary>
     /// Удаляет базового клиента.
