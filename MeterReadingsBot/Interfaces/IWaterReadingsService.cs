@@ -33,6 +33,6 @@ public interface IWaterReadingsService
     /// <param name="clientInfo">Информация клиента.</param>
     /// <param name="cancellationToken">Токен отмены.</param>
     /// <returns>Ответное сообщение.</returns>
-    Task<HttpStatusCode> SendWaterReadingsOKiTSAsync(Client clientInfo, CancellationToken cancellationToken);
+    Task SendWaterReadingsOKiTSAsync(Client clientInfo, CancellationToken cancellationToken);
     #endregion
 }

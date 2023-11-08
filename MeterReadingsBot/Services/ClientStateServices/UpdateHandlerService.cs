@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MeterReadingsBot.Entities;
 using MeterReadingsBot.Enums;
+using MeterReadingsBot.Exceptions;
 using MeterReadingsBot.Repositories;
 using Microsoft.Extensions.Logging;
 using Telegram.Bot;
@@ -22,12 +23,12 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
 {
     #region Data
     #region Fields
+    private readonly AdminUserClientService _adminUserClientService;
     private readonly ILogger<UpdateHandlerService> _logger;
-    private readonly IUserClientRepository _userClientRepository;
 
     private readonly IStartUserClientRepository _startUserClientRepository;
+    private readonly IUserClientRepository _userClientRepository;
     private readonly WaterReadingsUserClientService _waterReadingsUserClientService;
-    private readonly AdminUserClientService _adminUserClientService;
     #endregion
     #endregion
 
@@ -59,7 +60,7 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
 
     #region IUpdateHandler members
     /// <summary>
-    /// Обрабатывает исключения.
+    ///     Обрабатывает исключения.
     /// </summary>
     /// <param name="botClient">Бот.</param>
     /// <param name="exception">Исключение.</param>
@@ -107,49 +108,32 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
         {
             await handler;
         }
+        catch (TelegramMessageException telegramMessageException)
+        {
+            await HandleTelegramMessageErrorAsync(update, telegramMessageException);
+        }
         catch (Exception exception)
         {
             await HandleErrorAsync(exception);
         }
-    }
-
-    private Task BotOnMyChatMemberReceived(ChatMemberUpdated myChatMember)
-    {
-        var chatId = myChatMember.Chat.Id;
-        if (myChatMember.NewChatMember.Status == ChatMemberStatus.Kicked)
-        {
-            var clients = _userClientRepository.GetAllBy(chatId);
-            foreach (var client in clients)
-            {
-                _userClientRepository.Remove(client);
-            }
-        }
-        if (myChatMember.NewChatMember.Status == ChatMemberStatus.Member)
-        {
-            InitializeUsers(chatId);
-        }
-        return Task.CompletedTask;
     }
     #endregion
 
     #region Private
     private async Task BotOnMessageReceived(Message message, CancellationToken cancellationToken)
     {
-       if (message.Type != MessageType.Text)
+        if (message.Type != MessageType.Text)
             return;
-       var chatId = message.Chat.Id;
-       var chatMessage = message.Text.Split(' ').First();
-       if (chatMessage == "/start")
-       {
-           InitializeUsers(chatId);
-           return;
-       }
-       if (chatMessage == MainMenuAnswer)
-       {
-           ResetStartUser(chatId);
-       }
-       var startState = GetStartUserState(chatId);
-       _logger.LogInformation($"Receive message type: {message.Type}");
+        var chatId = message.Chat.Id;
+        var chatMessage = message.Text.Split(' ').First();
+        if (chatMessage == "/start")
+        {
+            InitializeUsers(chatId);
+            return;
+        }
+        if (chatMessage == MainMenuAnswer) ResetStartUser(chatId);
+        var startState = GetStartUserState(chatId);
+        _logger.LogInformation($"Receive message type: {message.Type}");
         var action = startState switch
         {
             UserClientState.Start => GetDefaultTaskMessage(message, cancellationToken),
@@ -163,20 +147,16 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
 
     }
 
-    private void InitializeUsers(long chatId)
+    private Task BotOnMyChatMemberReceived(ChatMemberUpdated myChatMember)
     {
-        if (_userClientRepository.GetAllBy(chatId).Count == 0)
+        var chatId = myChatMember.Chat.Id;
+        if (myChatMember.NewChatMember.Status == ChatMemberStatus.Kicked)
         {
-            _userClientRepository.Add(new StartUserClient(chatId)); // TODO фабрика создания всех видов клиентов и последующее добавление в репозитории.
-            _userClientRepository.Add(new WaterReadingsUserClient(chatId));
+            var clients = _userClientRepository.GetAllBy(chatId);
+            foreach (var client in clients) _userClientRepository.Remove(client);
         }
-    }
-
-    private void ResetStartUser(long chatId)
-    {
-        var startUser = _startUserClientRepository.FindBy(chatId);
-        startUser.SetStateToStartState();
-        _startUserClientRepository.Update(startUser);
+        if (myChatMember.NewChatMember.Status == ChatMemberStatus.Member) InitializeUsers(chatId);
+        return Task.CompletedTask;
     }
 
     private Task<Message> GetDefaultTaskMessage(Message message, CancellationToken cancellationToken)
@@ -204,10 +184,7 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
     private UserClientState GetStartUserState(long chatId)
     {
         var client = _startUserClientRepository.FindBy(chatId);
-        if (client == null)
-        {
-            InitializeUsers(chatId);
-        }
+        if (client == null) InitializeUsers(chatId);
         return client == null ? UserClientState.Start : client.State;
     }
 
@@ -224,13 +201,19 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
         return Task.CompletedTask;
     }
 
+    private async Task<Message> HandleTelegramMessageErrorAsync(Update update, TelegramMessageException telegramMessageException)
+    {
+        return await TelegramBotClient.SendTextMessageAsync(update.Message?.Chat.Id!,
+            telegramMessageException.Message,
+            replyMarkup: new ReplyKeyboardRemove());
+    }
+
 
     private async Task<Message> HelpMessage(Message message, CancellationToken cancellationToken)
     {
         const string usage = "Команды бота:\n" +
                              "/help - отправляет сообщение с командами\n" +
                              "/sendreadings - запускает команду подачу показаний\n" +
-                             "/admin - админские штучки :)\n" +
                              "Ошибки и пожелания - @KeST3107";
 
         return await TelegramBotClient.SendTextMessageAsync(
@@ -238,6 +221,15 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
             usage,
             replyMarkup: new ReplyKeyboardRemove(),
             cancellationToken: cancellationToken);
+    }
+
+    private void InitializeUsers(long chatId)
+    {
+        if (_userClientRepository.GetAllBy(chatId).Count == 0)
+        {
+            _userClientRepository.Add(new StartUserClient(chatId)); // TODO фабрика создания всех видов клиентов и последующее добавление в репозитории.
+            _userClientRepository.Add(new WaterReadingsUserClient(chatId));
+        }
     }
 
     private async Task<Message> MenuMessage(Message message, CancellationToken cancellationToken)
@@ -249,6 +241,13 @@ public class UpdateHandlerService : UserClientServiceBase, IUpdateHandler
             usage,
             replyMarkup: new ReplyKeyboardRemove(),
             cancellationToken: cancellationToken);
+    }
+
+    private void ResetStartUser(long chatId)
+    {
+        var startUser = _startUserClientRepository.FindBy(chatId);
+        startUser.SetStateToStartState();
+        _startUserClientRepository.Update(startUser);
     }
 
     private Task UnknownUpdateHandlerAsync(Update update)

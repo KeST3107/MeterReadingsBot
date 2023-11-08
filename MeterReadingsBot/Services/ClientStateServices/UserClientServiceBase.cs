@@ -31,6 +31,10 @@ public abstract class UserClientServiceBase
     /// Отклоняющий ответ.
     /// </summary>
     protected const string MainMenuAnswer = "/menu";
+    /// <summary>
+    /// Сообщение ошибки при выборе неправильного ответа.
+    /// </summary>
+    protected const string ConfirmationAnswerErrorMessage = $"Здесь можно ответить только {ConfirmationAnswer} или {RejectionAnswer}";
     #endregion
 
     #region Fields
