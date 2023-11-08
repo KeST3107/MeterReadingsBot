@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MeterReadingsBot.Entities;
+using MeterReadingsBot.Exceptions;
 using MeterReadingsBot.Interfaces;
 using MeterReadingsBot.Models;
 using MeterReadingsBot.Settings;
@@ -55,9 +56,13 @@ public class WaterReadingsService : IWaterReadingsService
         var uri = new Uri(_settings.GetClientUri);
         var content = new StringContent($"nomer={personnelNumber}", Encoding.UTF8, MediaType);
         var response = await _httpClientService.PostAsync(uri, content, cancellationToken);
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            throw new TelegramMessageException("Получение данных клиента завершилась некорректно, отправьте ДА, чтобы попробовать еще раз.");
+        }
         var stringHtml = response.Content.ReadAsStringAsync()
             .Result;
-        if (stringHtml.Contains(NumberNotFined)) return null;
+        if (stringHtml.Contains(NumberNotFined)) throw new TelegramMessageException("Лицевой счет не найден. Введите заново.");
         var nodes = _htmlParserService.GetReadingsNodes(stringHtml)[0]
             .ChildNodes[1]
             .InnerText.Split("\n");
@@ -65,7 +70,7 @@ public class WaterReadingsService : IWaterReadingsService
     }
 
     /// <inheritdoc />
-    public async Task<HttpStatusCode> SendWaterReadingsOKiTSAsync(Client clientInfo, CancellationToken cancellationToken)
+    public async Task SendWaterReadingsOKiTSAsync(Client clientInfo, CancellationToken cancellationToken)
     {
         var uri = new Uri(_settings.SendReadingsUri);
         var personnelNumber = clientInfo.PersonalNumber;
@@ -73,7 +78,10 @@ public class WaterReadingsService : IWaterReadingsService
         var contentMessage = clientInfo.HotWaterKitchen == null ? $"nomer={personnelNumber}&0={hotWaterBathroom}" : $"nomer={personnelNumber}&0={hotWaterBathroom}&1={clientInfo.HotWaterKitchen}";
         var content = new StringContent(contentMessage, Encoding.UTF8, MediaType);
         var response = await _httpClientService.PostAsync(uri, content, cancellationToken);
-        return response.StatusCode;
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            throw new TelegramMessageException("Отправка показаний завершилась некорректно, попробуйте еще раз.");
+        }
     }
 
     /// <inheritdoc />

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MeterReadingsBot.Entities;
 using MeterReadingsBot.Enums;
+using MeterReadingsBot.Exceptions;
 using MeterReadingsBot.Interfaces;
 using MeterReadingsBot.Repositories;
 using MeterReadingsBot.Settings;
@@ -123,10 +124,8 @@ public class AdminUserClientService : UserClientServiceBase, IUserClientService
         if (isConvertible is false) return await TelegramBotClient.SendTextMessageAsync(chatId, "Введено недопустимое значение.", cancellationToken: cancellationToken);
         var adminUser = _adminUserRepository.FindBy(adminId);
         if (adminUser != null)
-        {
-            return await TelegramBotClient.SendTextMessageAsync(chatId, "Пользователь уже существует.\n" +
-                                                                        "Введите заново.", cancellationToken: cancellationToken);
-        }
+            throw new TelegramMessageException("Пользователь уже существует.\n" +
+                                               "Введите заново.");
         _adminUserRepository.Add(new AdminUserClient(adminId, null));
         adminUserClient.AdminUserState = AdminUserState.Commands;
         _adminUserRepository.Update(adminUserClient);
@@ -152,7 +151,6 @@ public class AdminUserClientService : UserClientServiceBase, IUserClientService
             "/admins" => GetAdminUsersMessage(chatId, cancellationToken),
             "/users" => TelegramBotClient.SendTextMessageAsync(chatId, "Колчество пользователей: " + _startUserClientRepository.GetAll().Count, cancellationToken: cancellationToken),
             "/promotion" => GetStartPromotionMessageAsync(adminUserClient, chatId, cancellationToken),
-            "/exit" => GetExitAdminMessageAsync(adminUserClient, chatId, cancellationToken),
             _ => Usage(message, cancellationToken)
         };
     }
@@ -162,17 +160,6 @@ public class AdminUserClientService : UserClientServiceBase, IUserClientService
         adminUserClient.AdminUserState = AdminUserState.Promotion;
         _adminUserRepository.Update(adminUserClient);
         return await TelegramBotClient.SendTextMessageAsync(chatId, "Введите сообщение рассылки.", cancellationToken: cancellationToken);
-    }
-
-    private async Task<Message> GetExitAdminMessageAsync(AdminUserClient adminUserClient, long chatId, CancellationToken cancellationToken)
-    {
-        adminUserClient.AdminUserState = AdminUserState.Start;
-        _adminUserRepository.Update(adminUserClient);
-        SetStartUserToDefault(adminUserClient.ChatId);
-
-        return await TelegramBotClient.SendTextMessageAsync(chatId,
-            "Произведен выход из режима админа.",
-            cancellationToken: cancellationToken);
     }
 
     private async Task<Message> GetRemoveAdminMessageAsync(AdminUserClient adminUserClient, Message message, CancellationToken cancellationToken)
