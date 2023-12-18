@@ -47,6 +47,9 @@ namespace MeterReadingsBot.Migrations
                     b.Property<int?>("HotWaterKitchen")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("LastReadingsTime")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PersonalNumber")
                         .HasColumnType("text");
 

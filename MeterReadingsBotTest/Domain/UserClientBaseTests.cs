@@ -40,7 +40,7 @@ public class UserClientBaseTests
     public void UpdateTempClient_ClientUpdated()
     {
         var client = new WaterReadingsUserClient(15151515);
-        var clientDto = new ClientDto("Address", "FullName", "15351565");
+        var clientDto = new ClientDto("Address", "FullName", "15351565", DateTime.Now);
         client.UpdateTempClient(clientDto);
         Assert.AreEqual(client.TempClient.Address, clientDto.Address);
         Assert.AreEqual(client.TempClient.FullName, clientDto.FullName);
