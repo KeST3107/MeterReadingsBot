@@ -38,6 +38,11 @@ public class BotContext : DbContext
     /// Возвращает или устанавливает сущности клиентов передачи показаний.
     /// </summary>
     public DbSet<WaterReadingsUserClient> WaterReadingsUserClients { get; private set; }
+
+    /// <summary>
+    /// Возвращает или устанавливает сущности суперадминов.
+    /// </summary>
+    public DbSet<AdminUserClient> AdminUserClients { get; private set; }
     #endregion
 
     #region Overrided
@@ -47,6 +52,7 @@ public class BotContext : DbContext
         modelBuilder.Entity<UserClientBase>()
             .HasDiscriminator<string>("DISCRIMINATOR")
             .HasValue<WaterReadingsUserClient>(nameof(WaterReadingsUserClient))
+            .HasValue<AdminUserClient>(nameof(AdminUserClient))
             .HasValue<StartUserClient>(nameof(StartUserClient));
         modelBuilder.Entity<UserClientBase>()
             .HasKey(clientBase => clientBase.Id);

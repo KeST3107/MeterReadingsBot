@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using MeterReadingsBot.Interfaces;
 using MeterReadingsBot.Repositories;
 using MeterReadingsBot.Services;
@@ -26,10 +27,13 @@ public static class ServiceDependencyInjectionExtensions
         services.AddTransient<IWaterReadingsService, WaterReadingsService>();
         services.AddTransient<IEmailService, EmailService>();
         services.AddTransient<IHtmlParserService, HtmlParserService>();
-        services.AddTransient<IWaterReadingsUserClientService, WaterReadingsUserClientService>();
+        services.AddTransient<IPromotionService, PromotionService>();
+        services.AddTransient<WaterReadingsUserClientService>();
+        services.AddTransient<AdminUserClientService>();
         services.AddScoped<IUserClientRepository, UserClientRepository>();
         services.AddScoped<IWaterReadingsClientRepository, UserClientRepository>();
         services.AddScoped<IStartUserClientRepository, UserClientRepository>();
+        services.AddScoped<IAdminUserRepository, UserClientRepository>();
     }
 
     /// <summary>
@@ -38,7 +42,7 @@ public static class ServiceDependencyInjectionExtensions
     /// <param name="services">Сервисы.</param>
     public static void AddTelegramServices(this IServiceCollection services)
     {
-        services.AddScoped<UpdateHandler>();
+        services.AddScoped<UpdateHandlerService>();
         services.AddScoped<ReceiverService>();
         services.AddHostedService<PollingService>();
     }
@@ -51,7 +55,21 @@ public static class ServiceDependencyInjectionExtensions
     {
         services.AddSingleton(configuration.GetSection(nameof(TelegramBotSettings)).Get<TelegramBotSettings>());
         services.AddSingleton(configuration.GetSection(nameof(EmailSettings)).Get<EmailSettings>());
+        services.AddSingleton(configuration.GetSection(nameof(AdminUserSettings)).Get<AdminUserSettings>());
+        services.AddSingleton(configuration.GetSection(nameof(PromotionMessageSettings)).Get<PromotionMessageSettings>());
+        services.AddSingleton(GetCronJobSettings(configuration));
         services.AddSingleton(GetWaterReadingsServiceSettings(configuration));
+    }
+
+    private static CronJobSettings GetCronJobSettings(IConfiguration configuration)
+    {
+        return Debugger.IsAttached
+            ? new CronJobSettings
+            {
+                WaterReadingsStartPromotionJobTrigger = "10 0/1 * * * ?", // Каждая десятая секунда минуты.
+                WaterReadingsEndPromotionJobTrigger = "30 0/1 * * * ?" // Каждая тридцатая секунда минуты.
+            }
+            : configuration.GetSection(nameof(CronJobSettings)).Get<CronJobSettings>();
     }
     #endregion
 

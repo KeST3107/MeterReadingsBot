@@ -1,6 +1,6 @@
-# MeterReadingsBot  
+# MeterReadingsBot
 [![MeterReadingsBot](https://github.com/KeST3107/MeterReadingsBot/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/KeST3107/MeterReadingsBot/actions/workflows/dotnet.yml)
-### TODO List:  
+### TODO List:
 ### Стараться каждую таску делать отдельной веткой и сливать ее в dev => master
 Сделать корректное отображение часового пояса в бд  
 Если таска по получению клиента долго выполняется, то приложение должно возвращать ответ "не можем получить данные попробуйте еще раз" DONE  

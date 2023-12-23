@@ -10,11 +10,11 @@ namespace MeterReadingsBotTest.ClentStateServices;
 [TestFixture]
 public class WaterReadingsUserClientServiceTestFixture : UserClientServiceBaseTestFixture
 {
-    private IWaterReadingsUserClientService _waterReadingsUserClientService;
+    private IUserClientService _waterReadingsUserClientService;
 
     public async Task Test()
     {
-        var message = await _waterReadingsUserClientService.GetStartWaterReadingsTaskMessage(new Message
+        var message = await _waterReadingsUserClientService.GetStartUserTaskMessageAsync(new Message
             {
                 Animation = null,
                 Audio = null,
@@ -45,6 +45,6 @@ public class WaterReadingsUserClientServiceTestFixture : UserClientServiceBaseTe
     protected override void SetUp()
     {
         base.SetUp();
-        _waterReadingsUserClientService = GetService<IWaterReadingsUserClientService>();
+        _waterReadingsUserClientService = GetService<IUserClientService>();
     }
 }

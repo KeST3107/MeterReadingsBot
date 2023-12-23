@@ -12,7 +12,8 @@ namespace MeterReadingsBot.Repositories;
 /// </summary>
 public class UserClientRepository : IUserClientRepository,
     IWaterReadingsClientRepository,
-    IStartUserClientRepository
+    IStartUserClientRepository,
+    IAdminUserRepository
 {
     #region Data
     #region Fields
@@ -42,6 +43,44 @@ public class UserClientRepository : IUserClientRepository,
     }
 
     /// <inheritdoc />
+    public AdminUserClient Add(AdminUserClient userClient)
+    {
+        _context.AdminUserClients.Add(userClient);
+        _context.SaveChanges();
+        return userClient;
+    }
+
+    AdminUserClient IUserClientRepository<AdminUserClient>.FindBy(long chatId)
+    {
+        return _context.AdminUserClients.SingleOrDefault(clientBase => clientBase.ChatId == chatId);
+    }
+
+    /// <inheritdoc />
+    public void Update(AdminUserClient userClient)
+    {
+        _context.AdminUserClients.Update(userClient);
+        _context.SaveChanges();
+    }
+
+    IReadOnlyCollection<AdminUserClient> IAdminUserRepository.GetAll()
+    {
+        return _context.AdminUserClients.ToList();
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyCollection<UserClientBase> GetAllBy(long chatId)
+    {
+       return _context.UserClients.Where(client => client.ChatId == chatId).ToList();
+    }
+
+    /// <inheritdoc />
+    public void Remove(AdminUserClient client)
+    {
+        _context.AdminUserClients.Remove(client);
+        _context.SaveChanges();
+    }
+
+    /// <inheritdoc />
     public UserClientBase FindBy(long chatId)
     {
         return _context.UserClients.SingleOrDefault(clientBase => clientBase.ChatId == chatId);
@@ -57,6 +96,7 @@ public class UserClientRepository : IUserClientRepository,
     public void Remove(UserClientBase client)
     {
         _context.UserClients.Remove(client);
+        _context.SaveChanges();
     }
 
     /// <inheritdoc />
@@ -86,6 +126,11 @@ public class UserClientRepository : IUserClientRepository,
         _context.StartUserClients.Update(userClient);
         _context.SaveChanges();
     }
+
+    IReadOnlyCollection<StartUserClient> IStartUserClientRepository.GetAll()
+    {
+        return _context.StartUserClients.ToList();
+    }
     #endregion
 
     #region IUserClientRepository<WaterReadingsUserClient> members
@@ -107,6 +152,11 @@ public class UserClientRepository : IUserClientRepository,
     {
         _context.WaterReadingsUserClients.Update(userClient);
         _context.SaveChanges();
+    }
+
+    IReadOnlyCollection<WaterReadingsUserClient> IWaterReadingsClientRepository.GetAll()
+    {
+        return _context.WaterReadingsUserClients.ToList();
     }
     #endregion
 }

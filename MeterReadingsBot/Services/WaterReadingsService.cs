@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using HtmlAgilityPack;
 using MeterReadingsBot.Entities;
+using MeterReadingsBot.Exceptions;
 using MeterReadingsBot.Interfaces;
 using MeterReadingsBot.Models;
 using MeterReadingsBot.Settings;
@@ -19,6 +23,9 @@ public class WaterReadingsService : IWaterReadingsService
     #region Data
     #region Consts
     private const string MediaType = "application/x-www-form-urlencoded";
+    private const string NumberNotFined = "Номер не найден";
+    private const string PersonnelInformationXPath = "//div[@class='table-responsive']";
+    private const string WaterReadingsXPath = "//table[@borderclass='darkblue']//tr//td//div[@class]";
     #endregion
 
     #region Fields
@@ -54,17 +61,27 @@ public class WaterReadingsService : IWaterReadingsService
         var uri = new Uri(_settings.GetClientUri);
         var content = new StringContent($"nomer={personnelNumber}", Encoding.UTF8, MediaType);
         var response = await _httpClientService.PostAsync(uri, content, cancellationToken);
+        if (response.StatusCode != HttpStatusCode.OK) throw new TelegramMessageException("Получение данных клиента завершилась некорректно, отправьте ДА, чтобы попробовать еще раз.");
         var stringHtml = response.Content.ReadAsStringAsync()
             .Result;
-        if (stringHtml.Contains("Номер не найден")) return null;
-        var nodes = _htmlParserService.GetReadingsNodes(stringHtml)[0]
+        if (stringHtml.Contains(NumberNotFined)) throw new TelegramMessageException("Лицевой счет не найден. Введите заново.");
+        var personalInfoNodes = _htmlParserService.GetReadingsNodes(stringHtml, PersonnelInformationXPath)[0]
             .ChildNodes[1]
             .InnerText.Split("\n");
-        return new ClientDto(nodes[3].TrimStart(' '), nodes[4].TrimStart(' '), nodes[2].Split(' ')[3]);
+        var waterReadingsNodes = _htmlParserService.GetReadingsNodes(stringHtml, WaterReadingsXPath);
+        var lastSendDate = GetLastSendDate(waterReadingsNodes);
+        if (lastSendDate != DateTime.MinValue)
+        {
+            var dateTimeNow = DateTime.Now;
+            if (lastSendDate.Year == dateTimeNow.Year && lastSendDate.Month == dateTimeNow.Month && lastSendDate.Day <= dateTimeNow.Day)
+                throw new TelegramMessageException("Данный клиент уже отправлял показания в этом месяце, попробуйте другой лицевой счет.");
+
+        }
+        return new ClientDto(personalInfoNodes[3].TrimStart(' '), personalInfoNodes[4].TrimStart(' '), personalInfoNodes[2].Split(' ')[3], lastSendDate != DateTime.MinValue ? lastSendDate : null);
     }
 
     /// <inheritdoc />
-    public async Task<HttpStatusCode> SendWaterReadingsOKiTSAsync(Client clientInfo, CancellationToken cancellationToken)
+    public async Task SendWaterReadingsOKiTSAsync(Client clientInfo, CancellationToken cancellationToken)
     {
         var uri = new Uri(_settings.SendReadingsUri);
         var personnelNumber = clientInfo.PersonalNumber;
@@ -72,7 +89,7 @@ public class WaterReadingsService : IWaterReadingsService
         var contentMessage = clientInfo.HotWaterKitchen == null ? $"nomer={personnelNumber}&0={hotWaterBathroom}" : $"nomer={personnelNumber}&0={hotWaterBathroom}&1={clientInfo.HotWaterKitchen}";
         var content = new StringContent(contentMessage, Encoding.UTF8, MediaType);
         var response = await _httpClientService.PostAsync(uri, content, cancellationToken);
-        return response.StatusCode;
+        if (response.StatusCode != HttpStatusCode.OK) throw new TelegramMessageException("Отправка показаний завершилась некорректно, попробуйте еще раз.");
     }
 
     /// <inheritdoc />
@@ -95,6 +112,31 @@ public class WaterReadingsService : IWaterReadingsService
                coldWaterKitchenMessage +
                hotWaterKitchenMessage +
                "Данное сообщение сформировано автоматически и не требует ответа!";
+    }
+
+    private DateTime GetLastSendDate(HtmlNodeCollection waterReadingsNodes)
+    {
+        var values = waterReadingsNodes.Where(x => x.InnerText.Contains('в'))
+            .Select(x =>
+            {
+                var stringDatetime = x.InnerText.Remove(x.InnerText.IndexOf('в') - 1, 2);
+                var success = DateTime.TryParseExact(stringDatetime,
+                    "dd.MM.yy HH:mm",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var value);
+                ;
+                return new
+                {
+                    success,
+                    value
+                };
+            })
+            .Where(x => x.success && x.value < DateTime.Now.AddDays(1))
+            .Select(x => x.value)
+            .OrderBy(x => x);
+        return values
+            .FirstOrDefault();
     }
 
     private string GetRecipientMailByAddress(string clientInfoAddress)

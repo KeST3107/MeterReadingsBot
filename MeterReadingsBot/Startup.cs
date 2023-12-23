@@ -1,8 +1,11 @@
 ﻿using System;
+using MeterReadingsBot.Dal;
 using MeterReadingsBot.Extensions;
+using MeterReadingsBot.Repositories;
 using MeterReadingsBot.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -11,16 +14,16 @@ using Telegram.Bot;
 namespace MeterReadingsBot;
 
 /// <summary>
-/// Описывает инициализацию сервиса.
+///     Описывает инициализацию сервиса.
 /// </summary>
 public class Startup
 {
     #region .ctor
     /// <summary>
-    /// Инициализирует новый экземпляр типа <see cref="Startup" />
+    ///     Инициализирует новый экземпляр типа <see cref="Startup" />
     /// </summary>
     /// <param name="configuration">Конфигурация.</param>
-    /// <exception cref="ArgumentNullException">Если <see cref="IConfiguration"/> не задан.</exception>
+    /// <exception cref="ArgumentNullException">Если <see cref="IConfiguration" /> не задан.</exception>
     public Startup(IConfiguration configuration)
     {
         Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -29,14 +32,14 @@ public class Startup
 
     #region Properties
     /// <summary>
-    /// Возвращает конфигурацию.
+    ///     Возвращает конфигурацию.
     /// </summary>
-    public IConfiguration Configuration { get;}
+    public IConfiguration Configuration { get; }
     #endregion
 
     #region Public
     /// <summary>
-    /// Конфигурирует окружение сервиса.
+    ///     Конфигурирует окружение сервиса.
     /// </summary>
     /// <param name="app">Билдер приложения.</param>
     /// <param name="env">Веб окружение.</param>
@@ -59,7 +62,7 @@ public class Startup
     }
 
     /// <summary>
-    /// Конфигурирует ServiceCollection контейнер.
+    ///     Конфигурирует ServiceCollection контейнер.
     /// </summary>
     /// <param name="services">ServiceCollection контейнер.</param>
     public void ConfigureServices(IServiceCollection services)
@@ -72,14 +75,20 @@ public class Startup
             .GetRequiredService<TelegramBotSettings>();
 
 
-        services.AddHttpClient("telegram_bot_client")
-            .AddTypedClient<ITelegramBotClient>((httpClient) =>
+        services.AddHttpClient(nameof(TelegramBotClient))
+            .AddTypedClient<ITelegramBotClient>(httpClient =>
             {
                 TelegramBotClientOptions options = new(telegramBotSettings.BotToken);
                 return new TelegramBotClient(options, httpClient);
             });
         services.AddTelegramServices();
         services.AddControllers().AddNewtonsoftJson();
+        services.AddQuartzService();
+        using (var scope = services.BuildServiceProvider().CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<BotContext>();
+            db.Database.Migrate();
+        }
     }
     #endregion
 }
