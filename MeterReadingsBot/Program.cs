@@ -3,6 +3,9 @@ using Microsoft.Extensions.Hosting;
 
 namespace MeterReadingsBot;
 
+/// <summary>
+/// Определяет точку входа приложения.
+/// </summary>
 public static class Program
 {
     #region Public

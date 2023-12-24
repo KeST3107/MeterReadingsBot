@@ -6,23 +6,78 @@ name: .NET
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 6.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      - name : Check out code ☑️
+        uses: actions/checkout@v3
+
+      - name: Setup .NET 6 🔥
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Restore dependencies 🧰
+        run: dotnet restore
+
+      - name: Build app 🔨
+        run: dotnet build --no-restore
+
+      - name: Run automated tests 📝
+        run: dotnet test --no-build --verbosity normal
+
+      - name: Set up Docker Buildx ⚙️
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub 🔰
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push image ✈️
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: kest3107/meterreadingsbot:latest
+
+  server_update:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name : Check out files ☑️
+        uses: actions/checkout@v3
+      - name: Connect and run script 🔗
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script_stop: true
+          script: |
+            echo "Stop container"
+            docker stop meterreadingsbot
+            docker rm meterreadingsbot
+            docker image rm kest3107/meterreadingsbot
+            echo "Pull image"
+            docker pull kest3107/meterreadingsbot
+            echo "Start frontend container"
+            docker run --name meterreadingsbot -d kest3107/meterreadingsbot
+            echo "Finish deploying!"
+  notify:
+    needs: server_update
+    name: notify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Telegram 🚁
+        uses: yanzay/notify-telegram@v0.1.0
+        if: always()
+        with:
+          chat: ${{ secrets.TELEGRAM_NOTIFY_USER_ID }}
+          token: ${{ secrets.TELEGRAM_NOTIFY_BOT_TOKEN }}
+          status: ${{ job.status }}

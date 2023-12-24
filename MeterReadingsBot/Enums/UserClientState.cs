@@ -13,5 +13,10 @@ public enum UserClientState
     /// <summary>
     /// Состояние передачи показаний.
     /// </summary>
-    WaterReadings = 1
+    WaterReadings = 1,
+
+    /// <summary>
+    /// Состояние суперадмина.
+    /// </summary>
+    AdminUser = 2
 }

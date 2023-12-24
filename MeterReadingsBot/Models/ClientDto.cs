@@ -1,36 +1,14 @@
-﻿namespace MeterReadingsBot.Models;
+﻿using System;
+
+namespace MeterReadingsBot.Models;
 
 /// <summary>
 /// Модель данных клиента.
 /// </summary>
-public class ClientDto
+/// <param name="Address">Адрес.</param>
+/// <param name="FullName">Полное имя.</param>
+/// <param name="PersonnelNumber">Персональный номер.</param>
+/// <param name="LastReadingsDateTime">Дата последнего показания.</param>
+public record ClientDto(string Address, string FullName, string PersonnelNumber, DateTime? LastReadingsDateTime)
 {
-    #region Properties
-    /// <summary>
-    /// Инициализирует новый экземпляр типа <see cref="ClientDto" />.
-    /// </summary>
-    /// <param name="address">Адрес.</param>
-    /// <param name="fullName">Полное имя.</param>
-    /// <param name="personnelNumber">Персональный номер.</param>
-    public ClientDto(string address, string fullName, string personnelNumber)
-    {
-        Address = address;
-        FullName = fullName;
-        PersonnelNumber = personnelNumber;
-    }
-
-    /// <summary>
-    /// Возвращает адрес.
-    /// </summary>
-    public string Address { get; }
-    /// <summary>
-    /// Возвращает полное имя.
-    /// </summary>
-    public string FullName { get; }
-
-    /// <summary>
-    /// Возвращает персональный номер.
-    /// </summary>
-    public string PersonnelNumber { get;}
-    #endregion
 }

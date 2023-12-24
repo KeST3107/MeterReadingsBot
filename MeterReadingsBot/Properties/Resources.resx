@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<root>
+    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+        <xsd:element name="root" msdata:IsDataSet="true">
+            
+        </xsd:element>
+    </xsd:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <data name="StrFmtInfoPollingServiceStarted" xml:space="preserve">
+        <value>Starting polling service.</value>
+    </data>
+    <data name="StrFmtErrorPollingServiceFailed" xml:space="preserve">
+        <value>Polling failed with exception: {Exception}.</value>
+    </data>
+    <data name="StrFmtInfoStartReceiveingUpdates" xml:space="preserve">
+        <value>Start receiving updates for {BotName}.</value>
+    </data>
+    <data name="StrFmtInfoJobProcessStarted" xml:space="preserve">
+        <value>Обработка джобы: {JobName} запустилась.</value>
+    </data>
+    <data name="StrFmtErrorJobEndedWithError" xml:space="preserve">
+        <value>Джоба завершилась: {JobName} с ошибкой.</value>
+    </data>
+    <data name="StrFmtInfoJobEndedSuccessful" xml:space="preserve">
+        <value>Обработка джобы: {JobName} завершилась успешно.</value>
+    </data>
+    <data name="StrFmtInfoWaterReadingsStartPromotionJobDescription" xml:space="preserve">
+        <value>Каждое 15 число месяца, в 12:00 по МСК.</value>
+    </data>
+    <data name="StrFmtInfoWaterReadingsEndPromotionJobDescription" xml:space="preserve">
+        <value>Каждое 24 число месяца, в 12:00 по МСК.</value>
+    </data>
+    <data name="StrFmtInfoPromotionStarted" xml:space="preserve">
+        <value>Запущена рассылка: {PromotionName} клиентам в количестве: {CountUsers}.</value>
+    </data>
+    <data name="StrFmtErrorPromotionToUserFailed" xml:space="preserve">
+        <value>Рассылка пользователю {UserChatId} закончилась с ошибкой.</value>
+    </data>
+    <data name="StrFmtInfoPromotionEndedSuccessful" xml:space="preserve">
+        <value>Рассылка: {PromotionName} удачно дошла до {CountUsers} клиентов.</value>
+    </data>
+</root>

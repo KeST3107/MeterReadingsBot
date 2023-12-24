@@ -29,6 +29,12 @@ public interface IUserClientRepository
     IReadOnlyCollection<UserClientBase> GetAll();
 
     /// <summary>
+    /// Возвращает всех клиентов по идентфикатору чата.
+    /// </summary>
+    /// <returns>Коллекция базовых клиентов.</returns>
+    IReadOnlyCollection<UserClientBase> GetAllBy(long chatId);
+
+    /// <summary>
     /// Удаляет базового клиента.
     /// </summary>
     /// <param name="client">Базовый клиент.</param>

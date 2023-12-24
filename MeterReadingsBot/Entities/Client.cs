@@ -46,5 +46,10 @@ public class Client
     /// Возвращает или устанавливает персональный номер клиента.
     /// </summary>
     public string PersonalNumber { get; set; }
+
+    /// <summary>
+    /// Возвращает или устанавливает дату последнего показания.
+    /// </summary>
+    public DateTime? LastReadingsTime { get; set; }
     #endregion
 }
