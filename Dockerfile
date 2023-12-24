@@ -1,9 +1,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS base
 WORKDIR /app
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV ASPNETCORE_URLS http://*:5000
-EXPOSE 5000
-EXPOSE 5432
+EXPOSE 80
+EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 ARG Configuration=Release
