@@ -12,7 +12,8 @@ public interface IHtmlParserService
     ///     Получает записи таблиц страницы сайта.
     /// </summary>
     /// <param name="html">Тело страницы.</param>
+    /// <param name="xPath">Параметр фильтрования.</param>
     /// <returns>Комбинированная коллекция таблиц.</returns>
-    public HtmlNodeCollection GetReadingsNodes(string html);
+    public HtmlNodeCollection GetReadingsNodes(string html, string xPath);
     #endregion
 }
