@@ -41,14 +41,14 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}    
           
-    - name: Build and push
+    - name: Build and push image ✈️
       uses: docker/build-push-action@v5
       with:
           context: .
           push: true
           tags: kest3107/meterreadingsbot:latest
       
-    - name: Notify Telegram ✈️
+    - name: Notify Telegram 🚁
       uses: yanzay/notify-telegram@v0.1.0
       if: always()
       with:
