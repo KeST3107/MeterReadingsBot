@@ -56,7 +56,7 @@ public class WaterReadingsService : IWaterReadingsService
 
     #region IWaterReadingsService members
     /// <inheritdoc />
-    public async Task<ClientDto> GetClientInfoAsync(int personnelNumber, CancellationToken cancellationToken)
+    public async Task<ClientDto> GetClientInfoAsync(long personnelNumber, CancellationToken cancellationToken)
     {
         var uri = new Uri(_settings.GetClientUri);
         var content = new StringContent($"nomer={personnelNumber}", Encoding.UTF8, MediaType);

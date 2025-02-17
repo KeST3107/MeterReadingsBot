@@ -18,7 +18,7 @@ public interface IWaterReadingsService
     /// <param name="personnelNumber">Персональный номер.</param>
     /// <param name="cancellationToken">Токен отмены.</param>
     /// <returns>Данные клиента.</returns>
-    Task<ClientDto> GetClientInfoAsync(int personnelNumber, CancellationToken cancellationToken);
+    Task<ClientDto> GetClientInfoAsync(long personnelNumber, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Отправляет показания горячей и холодной воды клиента в компанию СеВДту.
