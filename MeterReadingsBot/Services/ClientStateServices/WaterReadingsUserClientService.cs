@@ -175,7 +175,7 @@ public class WaterReadingsUserClientService : UserClientServiceBase, IUserClient
     private int GetPersonnelNumber(Message message)
     {
         var isConvertible = int.TryParse(message.Text, out var personalNumber);
-        if (isConvertible is false || message.Text.Length != 9)
+        if (isConvertible is false || message.Text.Length != 13)
             throw new TelegramMessageException("Введено недопустимое значение.");
         return personalNumber;
     }
